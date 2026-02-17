@@ -436,7 +436,16 @@
     ctx.font = '600 22px "IBM Plex Mono", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, 32, 34);
+
+    if (text.length === 4) {
+      // Two-line layout: "mk" / "pw"
+      ctx.fillText(text.slice(0, 2), 32, 23);
+      ctx.fillText(text.slice(2), 32, 43);
+    } else {
+      // Single-character (checkmark) stays centered
+      ctx.fillText(text, 32, 34);
+    }
+
     return canvas.toDataURL('image/png');
   }
 
@@ -445,7 +454,9 @@
     var link = document.getElementById('favicon');
     if (!link) return;
     clearTimeout(faviconTimer);
-    link.href = generateFavicon('\u2713', '#1A1A2E', '#E8C547');
+    link.href = generateFavicon('\u2713',
+      isLight ? '#F5F3EE' : '#1A1A2E',
+      isLight ? '#B8960A' : '#E8C547');
     faviconTimer = setTimeout(function () {
       link.href = baseFaviconHref;
     }, 1500);
@@ -1279,6 +1290,65 @@
       el.textContent = 'word list unavailable';
     };
     document.body.appendChild(script);
+  }
+
+  // ============================================
+  // Mask Toggle
+  // ============================================
+
+  var maskBtn = document.querySelector('.btn-mask');
+  var isMasked = false;
+
+  function updateMaskAriaLabels() {
+    var allValues = document.querySelectorAll('.password-value');
+    allValues.forEach(function (el) {
+      if (isMasked) {
+        el.setAttribute('aria-label', 'Password hidden');
+      } else {
+        // Restore real password text — the render functions set aria-label
+        // For elements that have syntax-highlighted spans, read the text content
+        var text = el.textContent;
+        if (text && text !== 'loading...' && text !== '\u2014') {
+          el.setAttribute('aria-label', text);
+        }
+      }
+    });
+  }
+
+  if (maskBtn) {
+    maskBtn.addEventListener('click', function () {
+      isMasked = !isMasked;
+      document.querySelector('main').classList.toggle('masked', isMasked);
+      maskBtn.setAttribute('aria-pressed', isMasked ? 'true' : 'false');
+      maskBtn.setAttribute('aria-label', isMasked ? 'Show passwords' : 'Hide passwords');
+      announce(isMasked ? 'Passwords hidden' : 'Passwords visible');
+      updateMaskAriaLabels();
+    });
+  }
+
+  // ============================================
+  // Theme Toggle
+  // ============================================
+
+  var themeBtn = document.querySelector('.btn-theme');
+  var isLight = false;
+
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function () {
+      isLight = !isLight;
+      document.documentElement.classList.toggle('light', isLight);
+      themeBtn.setAttribute('aria-label',
+        isLight ? 'Switch to dark mode' : 'Switch to light mode');
+      announce(isLight ? 'Light mode' : 'Dark mode');
+      // Update theme-color meta tag
+      document.querySelector('meta[name="theme-color"]').content =
+        isLight ? '#F5F3EE' : '#1A1A2E';
+      // Regenerate favicon with theme colors
+      baseFaviconHref = generateFavicon('mkpw',
+        isLight ? '#F5F3EE' : '#1A1A2E',
+        isLight ? '#B8960A' : '#E8C547');
+      document.getElementById('favicon').href = baseFaviconHref;
+    });
   }
 
   // ============================================
