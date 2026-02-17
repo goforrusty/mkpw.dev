@@ -500,14 +500,14 @@
         else suffixParts = first;
       } else {
         if (hasDigit) {
-          var seg = { text: String(data.digit), cls: 'syn-d' };
-          if (r.digitSide === 'prefix') prefixParts.push(seg);
-          else suffixParts.push(seg);
+          var digitSeg = { text: String(data.digit), cls: 'syn-d' };
+          if (r.digitSide === 'prefix') prefixParts.push(digitSeg);
+          else suffixParts.push(digitSeg);
         }
         if (hasSymbol) {
-          var seg = { text: data.symbol, cls: 'syn-s' };
-          if (r.symbolSide === 'prefix') prefixParts.push(seg);
-          else suffixParts.push(seg);
+          var symbolSeg = { text: data.symbol, cls: 'syn-s' };
+          if (r.symbolSide === 'prefix') prefixParts.push(symbolSeg);
+          else suffixParts.push(symbolSeg);
         }
       }
 
@@ -1228,18 +1228,18 @@
 
   function renderDIY() {
     var el = diyOutput.querySelector('.password-value');
-    var crackEl = diyOutput.querySelector('.diy-entropy');
+    var entropyEl = diyOutput.querySelector('.diy-entropy');
     var length = parseInt(diySlider.value, 10);
     var poolSize = getDIYPoolSizeForEntropy();
 
     if (diyPassword) {
       renderHighlighted(el, diyPassword);
       el.classList.remove('loading');
-      crackEl.textContent = formatEntropyDisplay(length, poolSize);
+      entropyEl.textContent = formatEntropyDisplay(length, poolSize);
     } else {
       el.textContent = '\u2014';
       el.classList.add('loading');
-      crackEl.textContent = '';
+      entropyEl.textContent = '';
     }
   }
 
@@ -1346,10 +1346,10 @@
   diyOutput.querySelector('[data-refresh]').addEventListener('click', function () {
     generateDIY();
     var el = diyOutput.querySelector('.password-value');
-    var crackEl = diyOutput.querySelector('.diy-entropy');
+    var entropyEl = diyOutput.querySelector('.diy-entropy');
     var length = parseInt(diySlider.value, 10);
     var poolSize = getDIYPoolSizeForEntropy();
-    crackEl.textContent = formatEntropyDisplay(length, poolSize);
+    entropyEl.textContent = formatEntropyDisplay(length, poolSize);
     scrambleAnimate(el, diyPassword, function () {
       renderHighlighted(el, diyPassword);
     });
