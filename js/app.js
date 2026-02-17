@@ -551,17 +551,12 @@
   }
 
   // ============================================
-  // Crack Time Estimation
+  // Entropy Display
   // ============================================
 
   var GUESSES_PER_SECOND = 1e10;
 
-  function estimateEntropy(poolSize, length) {
-    return length * Math.log2(poolSize);
-  }
-
-  function formatCrackTime(entropy) {
-    var seconds = Math.pow(2, entropy) / GUESSES_PER_SECOND / 2;
+  function formatSeconds(seconds) {
     if (seconds < 1) return 'instant';
     if (seconds < 60) return '~' + Math.round(seconds) + ' seconds';
     if (seconds < 3600) return '~' + Math.round(seconds / 60) + ' minutes';
@@ -575,11 +570,17 @@
     return '~' + Math.round(years / 1e12) + ' trillion years';
   }
 
-  function getDIYCrackTime(poolSize, length) {
+  function formatEntropyDisplay(length, poolSize) {
     if (poolSize === 0 || length === 0) return '';
-    var time = formatCrackTime(estimateEntropy(poolSize, length));
-    if (time === 'instant') return 'guessable instantly';
-    return 'takes ' + time + ' to guess';
+    var entropy = Math.round(length * Math.log2(poolSize));
+    var seconds = Math.pow(2, entropy) / GUESSES_PER_SECOND;
+    var timeStr;
+    if (!isFinite(seconds)) {
+      timeStr = 'longer than the age of the universe';
+    } else {
+      timeStr = formatSeconds(seconds);
+    }
+    return '~' + entropy + ' bits \u00B7 10B guesses/s = ' + timeStr + ' (offline GPU attack)';
   }
 
   // ============================================
@@ -1227,14 +1228,14 @@
 
   function renderDIY() {
     var el = diyOutput.querySelector('.password-value');
-    var crackEl = diyOutput.querySelector('.crack-time');
+    var crackEl = diyOutput.querySelector('.diy-entropy');
     var length = parseInt(diySlider.value, 10);
     var poolSize = getDIYPoolSizeForEntropy();
 
     if (diyPassword) {
       renderHighlighted(el, diyPassword);
       el.classList.remove('loading');
-      crackEl.textContent = getDIYCrackTime(poolSize, length);
+      crackEl.textContent = formatEntropyDisplay(length, poolSize);
     } else {
       el.textContent = '\u2014';
       el.classList.add('loading');
@@ -1345,10 +1346,10 @@
   diyOutput.querySelector('[data-refresh]').addEventListener('click', function () {
     generateDIY();
     var el = diyOutput.querySelector('.password-value');
-    var crackEl = diyOutput.querySelector('.crack-time');
+    var crackEl = diyOutput.querySelector('.diy-entropy');
     var length = parseInt(diySlider.value, 10);
     var poolSize = getDIYPoolSizeForEntropy();
-    crackEl.textContent = getDIYCrackTime(poolSize, length);
+    crackEl.textContent = formatEntropyDisplay(length, poolSize);
     scrambleAnimate(el, diyPassword, function () {
       renderHighlighted(el, diyPassword);
     });

@@ -441,10 +441,13 @@ main {
   outline-offset: -2px;
 }
 
-.crack-time {
-  color: var(--muted);
+.diy-entropy {
   font-size: 0.75rem;
-  margin-left: auto;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  text-align: center;
+  margin-top: 0.5rem;
+  display: block;
 }
 
 .shortcut-badge {
@@ -744,9 +747,6 @@ input[type="range"]:focus-visible {
   padding: 12px 0 12px 16px;
 }
 
-.diy-output .row-top {
-  margin-bottom: 6px;
-}
 
 /* --- Pro Tip --- */
 .pro-tip {
