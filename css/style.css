@@ -199,6 +199,7 @@ main {
 .logo-tld {
   color: var(--muted);
   font-size: 0.6em;
+  font-weight: 300;
   letter-spacing: 1px;
   margin-left: 3px;
   opacity: 0;
@@ -238,26 +239,6 @@ main {
     0 0 50px rgba(232, 123, 107, 0.15);
 }
 
-.logo-def {
-  font-family: var(--font-sans);
-  font-size: 0.8125rem;
-  color: var(--muted);
-  letter-spacing: 0.3px;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  white-space: nowrap;
-}
-
-.logo-def.visible {
-  opacity: 1;
-}
-
-/* Click vs Tap — touch devices see "Tap", pointer devices see "Click" */
-.tap-text { display: none; }
-@media (hover: none) {
-  .click-text { display: none; }
-  .tap-text { display: inline; }
-}
 
 .slogan {
   color: var(--muted);
@@ -707,10 +688,6 @@ footer p + p {
     margin-bottom: 28px;
   }
 
-  .logo-def {
-    font-size: 0.6875rem;
-    flex-basis: 100%;
-  }
 
   .password-value {
     font-size: 0.9375rem;

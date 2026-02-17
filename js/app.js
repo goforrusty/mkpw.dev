@@ -672,7 +672,6 @@
   var logo = document.querySelector('.logo');
   var logoText = logo.querySelector('.logo-text');
   var logoTld = logo.querySelector('.logo-tld');
-  var logoDef = logo.querySelector('.logo-def');
   var sloganEl = document.querySelector('.slogan');
   var diySection = document.querySelector('.diy-section');
 
@@ -1225,7 +1224,6 @@
       logo.classList.remove('boot-hidden');
       renderLogoColors(logoText);
       logoTld.classList.add('visible');
-      logoDef.classList.add('visible');
       rows.forEach(function (r) { r.classList.remove('boot-hidden'); });
       diySection.classList.remove('boot-hidden');
       for (var i = 0; i < archetypes.length; i++) {
@@ -1248,9 +1246,6 @@
       cascadeLogoColors(function () {
         // Step 3: .dev and definition fade in
         logoTld.classList.add('visible');
-        setTimeout(function () {
-          logoDef.classList.add('visible');
-        }, 150);
         // Step 4: Password cascade + slogan
         setTimeout(function () {
           cascadeRows(0, function () {
