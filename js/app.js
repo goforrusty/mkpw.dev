@@ -35,17 +35,31 @@
   var LOWER = 'abcdefghijklmnopqrstuvwxyz';
   var DIGITS = '0123456789';
   var LETTERS = UPPER + LOWER;
-  var SAFE_SYMBOLS = '!@#$%';
-  var BROAD_SYMBOLS = '*&_-.+';
-  var EXTENDED_SYMBOLS = '=?^~|()';
+
+  // Symbol tiers (strictly cumulative)
+  var TIER1_SYMBOLS = '!@#$%^&*-_';                           // 10 chars — safe everywhere
+  var TIER2_SYMBOLS = '+.=?~(){}[]';                           // 11 chars
+  var TIER3_SYMBOLS = '"\'`\\/|:;<>,';                         // 11 chars
+
+  // Cumulative pools
+  var SYMBOLS_SAFE = TIER1_SYMBOLS;                            // 10
+  var SYMBOLS_MORE = TIER1_SYMBOLS + TIER2_SYMBOLS;            // 21
+  var SYMBOLS_FULL = TIER1_SYMBOLS + TIER2_SYMBOLS + TIER3_SYMBOLS; // 32
+
+  // Full printable ASCII (codes 33-126)
+  var FULL_ASCII = (function () {
+    var s = '';
+    for (var i = 33; i <= 126; i++) s += String.fromCharCode(i);
+    return s;
+  })();                                                        // 94 chars
 
   var CHARSETS = {
     upper: UPPER,
     lower: LOWER,
     digits: DIGITS,
-    safe: SAFE_SYMBOLS,
-    broad: SAFE_SYMBOLS + BROAD_SYMBOLS,
-    extended: SAFE_SYMBOLS + BROAD_SYMBOLS + EXTENDED_SYMBOLS
+    safe: SYMBOLS_SAFE,
+    more: SYMBOLS_MORE,
+    full: SYMBOLS_FULL
   };
 
   // ============================================
@@ -284,42 +298,20 @@
 
   var archetypes = [
     {
-      name: 'Universal',
+      name: 'Strong Random',
       generate: function () {
-        var pool = UPPER + LOWER + DIGITS + SAFE_SYMBOLS;
-        var reqs = [UPPER, LOWER, DIGITS, SAFE_SYMBOLS];
+        var pool = UPPER + LOWER + DIGITS + SYMBOLS_SAFE;
+        var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
         reqs.startsWithLetter = true;
         reqs.noTripleConsecutive = true;
         reqs.noSequentialRun = true;
-        return generateFromPool(14, pool, reqs);
+        return generateFromPool(18, pool, reqs);
       },
-      poolSize: 26 + 26 + 10 + 5,
-      length: 14
+      poolSize: 26 + 26 + 10 + 10,
+      length: 18
     },
     {
-      name: 'Letters & Numbers',
-      generate: function () {
-        var pool = UPPER + LOWER + DIGITS;
-        var reqs = [UPPER, LOWER, DIGITS];
-        reqs.noDoubleConsecutive = true;
-        return generateFromPool(14, pool, reqs);
-      },
-      poolSize: 26 + 26 + 10,
-      length: 14
-    },
-    {
-      name: 'Short & Safe',
-      generate: function () {
-        var pool = UPPER + LOWER + DIGITS + '!@#$';
-        var reqs = [UPPER, LOWER, DIGITS, '!@#$'];
-        reqs.startsWithLetter = true;
-        return generateFromPool(10, pool, reqs);
-      },
-      poolSize: 26 + 26 + 10 + 4,
-      length: 10
-    },
-    {
-      name: 'Passphrase',
+      name: 'Easy to Remember',
       generate: function () {
         if (!window.EFF_WORDLIST) return null;
         var list = window.EFF_WORDLIST;
@@ -334,25 +326,46 @@
       isPassphrase: true
     },
     {
-      name: 'Maximum',
+      name: 'No Symbols',
       generate: function () {
-        var symbols = '!@#$%*&_-.+';
-        var pool = UPPER + LOWER + DIGITS + symbols;
-        var reqs = [UPPER, LOWER, DIGITS, symbols];
-        reqs.noTripleConsecutive = true;
-        return generateFromPool(24, pool, reqs);
+        var pool = UPPER + LOWER + DIGITS;
+        var reqs = [UPPER, LOWER, DIGITS];
+        reqs.noDoubleConsecutive = true;
+        return generateFromPool(22, pool, reqs);
       },
-      poolSize: 26 + 26 + 10 + 11,
-      length: 24
+      poolSize: 26 + 26 + 10,
+      length: 22
+    },
+    {
+      name: 'Short',
+      generate: function () {
+        var pool = UPPER + LOWER + DIGITS + SYMBOLS_SAFE;
+        var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
+        reqs.startsWithLetter = true;
+        return generateFromPool(12, pool, reqs);
+      },
+      poolSize: 26 + 26 + 10 + 10,
+      length: 12
+    },
+    {
+      name: 'Super Strong',
+      generate: function () {
+        var pool = FULL_ASCII;
+        var nonAlpha = '';
+        for (var i = 0; i < pool.length; i++) {
+          if (!CHAR_CLASS.upper.test(pool[i]) && !CHAR_CLASS.lower.test(pool[i]) && !CHAR_CLASS.digit.test(pool[i])) {
+            nonAlpha += pool[i];
+          }
+        }
+        var reqs = [UPPER, LOWER, DIGITS, nonAlpha];
+        return generateFromPool(32, pool, reqs);
+      },
+      poolSize: 94,
+      length: 32
     }
   ];
 
-  var PASSPHRASE_INDEX = (function () {
-    for (var i = 0; i < archetypes.length; i++) {
-      if (archetypes[i].isPassphrase) return i;
-    }
-    return -1;
-  })();
+  var PASSPHRASE_INDEX = 1;
 
   // ============================================
   // Crack Time Estimation
@@ -904,16 +917,8 @@
       if (pill.getAttribute('aria-checked') === 'true') {
         var key = pill.dataset.charset;
         enabledCount++;
-        if (key === 'extended') {
-          pool += SAFE_SYMBOLS + BROAD_SYMBOLS + EXTENDED_SYMBOLS;
-          poolSize += SAFE_SYMBOLS.length + BROAD_SYMBOLS.length + EXTENDED_SYMBOLS.length;
-        } else if (key === 'broad') {
-          pool += SAFE_SYMBOLS + BROAD_SYMBOLS;
-          poolSize += SAFE_SYMBOLS.length + BROAD_SYMBOLS.length;
-        } else {
-          pool += CHARSETS[key] || '';
-          poolSize += (CHARSETS[key] || '').length;
-        }
+        pool += CHARSETS[key] || '';
+        poolSize += (CHARSETS[key] || '').length;
       }
     });
 
@@ -925,14 +930,7 @@
     togglePills.forEach(function (pill) {
       if (pill.getAttribute('aria-checked') === 'true') {
         var key = pill.dataset.charset;
-        var set;
-        if (key === 'extended') {
-          set = SAFE_SYMBOLS + BROAD_SYMBOLS + EXTENDED_SYMBOLS;
-        } else if (key === 'broad') {
-          set = SAFE_SYMBOLS + BROAD_SYMBOLS;
-        } else {
-          set = CHARSETS[key] || '';
-        }
+        var set = CHARSETS[key] || '';
         for (var i = 0; i < set.length; i++) chars.add(set[i]);
       }
     });
@@ -1000,6 +998,26 @@
     diyDebounceTimer = setTimeout(updateDIY, 50);
   });
 
+  function enforceCumulativeTiers(changedKey, newState) {
+    var tierOrder = ['safe', 'more', 'full'];
+    var idx = tierOrder.indexOf(changedKey);
+    if (idx === -1) return;
+
+    if (newState) {
+      // Enabling: auto-enable all lower tiers
+      for (var i = 0; i < idx; i++) {
+        var p = document.querySelector('.toggle-pill[data-charset="' + tierOrder[i] + '"]');
+        if (p) p.setAttribute('aria-checked', 'true');
+      }
+    } else {
+      // Disabling: auto-disable all higher tiers
+      for (var i = idx + 1; i < tierOrder.length; i++) {
+        var p = document.querySelector('.toggle-pill[data-charset="' + tierOrder[i] + '"]');
+        if (p) p.setAttribute('aria-checked', 'false');
+      }
+    }
+  }
+
   togglePills.forEach(function (pill) {
     pill.addEventListener('click', function () {
       var isChecked = pill.getAttribute('aria-checked') === 'true';
@@ -1018,7 +1036,11 @@
         }
       }
 
-      pill.setAttribute('aria-checked', isChecked ? 'false' : 'true');
+      var newState = !isChecked;
+      pill.setAttribute('aria-checked', newState ? 'true' : 'false');
+
+      // Enforce cumulative tiers for symbol pills
+      enforceCumulativeTiers(pill.dataset.charset, newState);
 
       var info = getDIYCharsets();
       var currentLength = parseInt(diySlider.value, 10);

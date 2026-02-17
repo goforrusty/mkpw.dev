@@ -386,6 +386,12 @@ main {
   margin-bottom: 6px;
 }
 
+.row-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
 .row-label {
   font-family: var(--font-sans);
   font-weight: 500;
@@ -393,6 +399,14 @@ main {
   color: var(--muted);
   letter-spacing: 1px;
   text-transform: uppercase;
+}
+
+.row-tagline {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .crack-time {
