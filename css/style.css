@@ -69,8 +69,51 @@
 }
 
 /* Light mode overrides for hardcoded values */
-:root.light .logo-brand::before { opacity: 0.4; }
-:root.light .logo-text [class^="syn-"] { text-shadow: none; }
+
+/* Backdrop: prismatic underflow — linear gradient shifted below text reads as
+   reflection on a surface, not as colored stains. Thinner profile than dark mode. */
+:root.light .logo-brand::before {
+  transform: translate(-50%, 25%);
+  width: 105%;
+  height: 70%;
+  background: linear-gradient(
+    90deg,
+    rgba(184, 150, 10, 0.28) 5%,
+    rgba(154, 126, 8, 0.20) 28%,
+    rgba(26, 140, 140, 0.22) 56%,
+    rgba(196, 69, 58, 0.18) 80%,
+    transparent 100%
+  );
+  filter: blur(16px);
+  opacity: 1;
+}
+
+/* Per-letter: embossed drop shadow — white highlight lifts the letter,
+   colored directional shadow grounds it. Replaces omnidirectional glow. */
+:root.light .logo-text .syn-u {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    0 1px 3px rgba(184, 150, 10, 0.35),
+    0 4px 14px rgba(184, 150, 10, 0.12);
+}
+:root.light .logo-text .syn-l {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    0 1px 3px rgba(154, 126, 8, 0.30),
+    0 4px 14px rgba(154, 126, 8, 0.10);
+}
+:root.light .logo-text .syn-d {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    0 1px 3px rgba(26, 140, 140, 0.35),
+    0 4px 14px rgba(26, 140, 140, 0.12);
+}
+:root.light .logo-text .syn-s {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    0 1px 3px rgba(196, 69, 58, 0.35),
+    0 4px 14px rgba(196, 69, 58, 0.12);
+}
 
 /* Theme transition */
 body {
@@ -253,7 +296,8 @@ main {
 .password-row {
   border-left: 2px solid var(--accent);
   padding: 12px 0 12px 16px;
-  border-bottom: 1px solid var(--surface);
+  border-bottom: none;
+  margin-bottom: 6px;
   transition: background-color 0.3s ease;
 }
 
@@ -295,6 +339,7 @@ main {
 
 .password-row:last-child {
   border-bottom: none;
+  margin-bottom: 0;
 }
 
 .row-top {
