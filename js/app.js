@@ -314,14 +314,16 @@
       name: 'Easy to Remember',
       generate: function () {
         if (!window.EFF_WORDLIST) return null;
-        var list = window.EFF_WORDLIST;
-        var words = [];
-        for (var i = 0; i < 4; i++) {
-          var w = list[randomInt(list.length)];
-          words.push(w.charAt(0).toUpperCase() + w.slice(1));
+        var data = generatePassphraseData();
+        if (!data) return null;
+        passphraseState.words = data.words;
+        passphraseState.digit = data.digit;
+        passphraseState.symbol = data.symbol;
+        passphraseState.recipe = data.recipe;
+        if (passphraseState.mode === 'plain') {
+          return renderPlainPassphrase(passphraseState);
         }
-        var digit = randomInt(10);
-        return words[0] + '-' + digit + '-' + words[1] + '-' + words[2] + '-' + words[3];
+        return renderDecoratedPassphrase(passphraseState);
       },
       isPassphrase: true
     },
@@ -366,6 +368,187 @@
   ];
 
   var PASSPHRASE_INDEX = 1;
+
+  // ============================================
+  // Passphrase Generation & Rendering
+  // ============================================
+
+  function generatePassphraseData() {
+    var list = window.EFF_WORDLIST;
+    if (!list) return null;
+
+    // Pick 4 unique words
+    var words = [];
+    var used = {};
+    var maxAttempts = 100;
+    while (words.length < 4 && maxAttempts-- > 0) {
+      var w = list[randomInt(list.length)];
+      if (!used[w]) {
+        words.push(w);
+        used[w] = true;
+      }
+    }
+
+    var digit = randomInt(10);
+    var symbol = SYMBOLS_SAFE[randomInt(SYMBOLS_SAFE.length)];
+    var recipe = generateRecipe(words.length);
+
+    return { words: words, digit: digit, symbol: symbol, recipe: recipe };
+  }
+
+  function generateRecipe(wordCount) {
+    var separators = ['-', '.', '_'];
+    var sep = separators[randomInt(separators.length)];
+
+    // Capitalization: at least one title-case, at least one lowercase
+    var caps = [];
+    for (var i = 0; i < wordCount; i++) caps.push(randomInt(2) === 0);
+    if (caps.every(function (c) { return c; })) caps[randomInt(wordCount)] = false;
+    if (caps.every(function (c) { return !c; })) caps[randomInt(wordCount)] = true;
+
+    var digitWord = randomInt(wordCount);
+    var digitSide = randomInt(2) === 0 ? 'prefix' : 'suffix';
+
+    var symbolWord = randomInt(wordCount);
+    var symbolSide = randomInt(2) === 0 ? 'prefix' : 'suffix';
+
+    var digitFirst = randomInt(2) === 0;
+
+    return {
+      separator: sep,
+      caps: caps,
+      digitWord: digitWord,
+      digitSide: digitSide,
+      symbolWord: symbolWord,
+      symbolSide: symbolSide,
+      digitFirst: digitFirst
+    };
+  }
+
+  function renderPlainPassphrase(data) {
+    return data.words.map(function (w) {
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join('-');
+  }
+
+  function renderDecoratedPassphrase(data) {
+    var r = data.recipe;
+    var parts = data.words.map(function (w, i) {
+      var word = r.caps[i]
+        ? w.charAt(0).toUpperCase() + w.slice(1)
+        : w.toLowerCase();
+
+      var prefix = '';
+      var suffix = '';
+
+      var hasDigit = (r.digitWord === i);
+      var hasSymbol = (r.symbolWord === i);
+
+      if (hasDigit && hasSymbol && r.digitSide === r.symbolSide) {
+        // Both on same side — use digitFirst to order
+        var d = String(data.digit);
+        var s = data.symbol;
+        var ordered = r.digitFirst ? d + s : s + d;
+        if (r.digitSide === 'prefix') {
+          prefix = ordered;
+        } else {
+          suffix = ordered;
+        }
+      } else {
+        if (hasDigit) {
+          if (r.digitSide === 'prefix') prefix += String(data.digit);
+          else suffix += String(data.digit);
+        }
+        if (hasSymbol) {
+          if (r.symbolSide === 'prefix') prefix += data.symbol;
+          else suffix += data.symbol;
+        }
+      }
+
+      return prefix + word + suffix;
+    });
+
+    return parts.join(r.separator);
+  }
+
+  // Build highlighted spans from passphrase state (avoids fragile string parsing)
+  function renderPassphraseDecoratedHighlighted(el, data) {
+    el.textContent = '';
+    var text = renderDecoratedPassphrase(data);
+    el.setAttribute('aria-label', text);
+
+    var r = data.recipe;
+
+    data.words.forEach(function (w, i) {
+      var word = r.caps[i]
+        ? w.charAt(0).toUpperCase() + w.slice(1)
+        : w.toLowerCase();
+
+      var hasDigit = (r.digitWord === i);
+      var hasSymbol = (r.symbolWord === i);
+
+      // Build attachment sequences for prefix and suffix
+      var prefixParts = [];
+      var suffixParts = [];
+
+      if (hasDigit && hasSymbol && r.digitSide === r.symbolSide) {
+        var side = r.digitSide;
+        var first = r.digitFirst
+          ? [{ text: String(data.digit), cls: 'syn-d' }, { text: data.symbol, cls: 'syn-s' }]
+          : [{ text: data.symbol, cls: 'syn-s' }, { text: String(data.digit), cls: 'syn-d' }];
+        if (side === 'prefix') prefixParts = first;
+        else suffixParts = first;
+      } else {
+        if (hasDigit) {
+          var seg = { text: String(data.digit), cls: 'syn-d' };
+          if (r.digitSide === 'prefix') prefixParts.push(seg);
+          else suffixParts.push(seg);
+        }
+        if (hasSymbol) {
+          var seg = { text: data.symbol, cls: 'syn-s' };
+          if (r.symbolSide === 'prefix') prefixParts.push(seg);
+          else suffixParts.push(seg);
+        }
+      }
+
+      // Emit prefix
+      prefixParts.forEach(function (p) {
+        var span = document.createElement('span');
+        span.textContent = p.text;
+        span.className = p.cls;
+        span.setAttribute('aria-hidden', 'true');
+        el.appendChild(span);
+      });
+
+      // Emit word characters (alternate colors by word index)
+      var wordClass = (i % 2 === 0) ? 'syn-u' : 'syn-l';
+      for (var c = 0; c < word.length; c++) {
+        var span = document.createElement('span');
+        span.textContent = word[c];
+        span.className = wordClass;
+        span.setAttribute('aria-hidden', 'true');
+        el.appendChild(span);
+      }
+
+      // Emit suffix
+      suffixParts.forEach(function (p) {
+        var span = document.createElement('span');
+        span.textContent = p.text;
+        span.className = p.cls;
+        span.setAttribute('aria-hidden', 'true');
+        el.appendChild(span);
+      });
+
+      // Emit separator (except after last word)
+      if (i < data.words.length - 1) {
+        var span = document.createElement('span');
+        span.textContent = r.separator;
+        span.className = 'syn-d';
+        span.setAttribute('aria-hidden', 'true');
+        el.appendChild(span);
+      }
+    });
+  }
 
   // ============================================
   // Crack Time Estimation
@@ -698,6 +881,15 @@
   var proTipShown = false;
   var sloganRotationTimer = null;
 
+  // Passphrase state — preserved across mode toggles
+  var passphraseState = {
+    words: [],
+    digit: 0,
+    symbol: '',
+    mode: 'decorated',
+    recipe: null
+  };
+
   // ============================================
   // Archetype Row Logic
   // ============================================
@@ -720,7 +912,13 @@
     }
 
     el.classList.remove('loading');
-    if (archetypes[index].isPassphrase) {
+    if (index === PASSPHRASE_INDEX && passphraseState.words.length > 0) {
+      if (passphraseState.mode === 'decorated') {
+        renderPassphraseDecoratedHighlighted(el, passphraseState);
+      } else {
+        renderPassphraseHighlighted(el, pw);
+      }
+    } else if (archetypes[index].isPassphrase) {
       renderPassphraseHighlighted(el, pw);
     } else {
       renderHighlighted(el, pw);
@@ -737,7 +935,13 @@
     el.classList.remove('loading');
 
     scrambleAnimate(el, pw, function () {
-      if (archetypes[index].isPassphrase) {
+      if (index === PASSPHRASE_INDEX && passphraseState.words.length > 0) {
+        if (passphraseState.mode === 'decorated') {
+          renderPassphraseDecoratedHighlighted(el, passphraseState);
+        } else {
+          renderPassphraseHighlighted(el, pw);
+        }
+      } else if (archetypes[index].isPassphrase) {
         renderPassphraseHighlighted(el, pw);
       } else {
         renderHighlighted(el, pw);
@@ -746,6 +950,28 @@
     hapticRegenerate();
     startFreshnessTimer(index);
     announce('Regenerated ' + archetypes[index].name + ' password');
+  }
+
+  // Re-render passphrase without regenerating (called by mode toggle)
+  function rerenderPassphrase() {
+    if (passphraseState.words.length === 0) return;
+
+    var pw;
+    if (passphraseState.mode === 'plain') {
+      pw = renderPlainPassphrase(passphraseState);
+    } else {
+      pw = renderDecoratedPassphrase(passphraseState);
+    }
+    passwords[PASSPHRASE_INDEX] = pw;
+
+    var el = rows[PASSPHRASE_INDEX].querySelector('.password-value');
+    el.classList.remove('loading');
+
+    if (passphraseState.mode === 'decorated') {
+      renderPassphraseDecoratedHighlighted(el, passphraseState);
+    } else {
+      renderPassphraseHighlighted(el, pw);
+    }
   }
 
   function regenerateAll() {
@@ -876,6 +1102,50 @@
   });
 
   // ============================================
+  // Mode Toggle (Easy to Remember)
+  // ============================================
+
+  var modeToggle = document.querySelector('.mode-toggle');
+  if (modeToggle) {
+    modeToggle.addEventListener('click', function (e) {
+      var btn = e.target;
+      while (btn && btn !== modeToggle && !btn.classList.contains('mode-option')) {
+        btn = btn.parentElement;
+      }
+      if (!btn || !btn.classList.contains('mode-option') || btn.classList.contains('active')) return;
+
+      var prev = modeToggle.querySelector('.active');
+      if (prev) {
+        prev.classList.remove('active');
+        prev.setAttribute('aria-checked', 'false');
+      }
+      btn.classList.add('active');
+      btn.setAttribute('aria-checked', 'true');
+
+      passphraseState.mode = btn.getAttribute('data-mode');
+      rerenderPassphrase();
+    });
+
+    modeToggle.addEventListener('keydown', function (e) {
+      var options = modeToggle.querySelectorAll('.mode-option');
+      var current = modeToggle.querySelector('.active');
+      var idx = Array.prototype.indexOf.call(options, current);
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        var next = options[(idx + 1) % options.length];
+        next.click();
+        next.focus();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var prev = options[(idx - 1 + options.length) % options.length];
+        prev.click();
+        prev.focus();
+      }
+    });
+  }
+
+  // ============================================
   // Keyboard Shortcuts
   // ============================================
 
@@ -883,6 +1153,7 @@
     var tag = document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (document.activeElement.getAttribute('role') === 'switch') return;
+    if (document.activeElement.getAttribute('role') === 'radio') return;
 
     var key = e.key;
 
