@@ -567,7 +567,8 @@
     if (years < 1e6) return '~' + Math.round(years / 1000) + ' thousand years';
     if (years < 1e9) return '~' + Math.round(years / 1e6) + ' million years';
     if (years < 1e12) return '~' + Math.round(years / 1e9) + ' billion years';
-    return '~' + Math.round(years / 1e12) + ' trillion years';
+    if (years < 1e15) return '~' + Math.round(years / 1e12) + ' trillion years';
+    return 'longer than the age of the universe';
   }
 
   function formatEntropyDisplay(length, poolSize) {

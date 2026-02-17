@@ -53,19 +53,19 @@
 :root.light {
   --bg: #F5F3EE;
   --surface: #E8E6E0;
-  --accent: #B8960A;
+  --accent: #8A7008;
   --text: #2A2A2E;
   --muted: #6B6B80;
   --success: #2E7D32;
   --error: #C62828;
 
-  --syntax-upper: #B8960A;
-  --syntax-lower: #9A7E08;
-  --syntax-digit: #1A8C8C;
-  --syntax-symbol: #C4453A;
+  --syntax-upper: #8A7008;
+  --syntax-lower: #7A6307;
+  --syntax-digit: #147272;
+  --syntax-symbol: #A83A30;
 
-  --accent-dim: rgba(184, 150, 10, 0.12);
-  --accent-glow: rgba(184, 150, 10, 0.06);
+  --accent-dim: rgba(138, 112, 8, 0.12);
+  --accent-glow: rgba(138, 112, 8, 0.06);
 }
 
 /* Light mode overrides for hardcoded values */
@@ -78,10 +78,10 @@
   height: 70%;
   background: linear-gradient(
     90deg,
-    rgba(184, 150, 10, 0.28) 5%,
-    rgba(154, 126, 8, 0.20) 28%,
-    rgba(26, 140, 140, 0.22) 56%,
-    rgba(196, 69, 58, 0.18) 80%,
+    rgba(138, 112, 8, 0.28) 5%,
+    rgba(122, 99, 7, 0.20) 28%,
+    rgba(20, 114, 114, 0.22) 56%,
+    rgba(168, 58, 48, 0.18) 80%,
     transparent 100%
   );
   filter: blur(16px);
@@ -93,26 +93,26 @@
 :root.light .logo-text .syn-u {
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 3px rgba(184, 150, 10, 0.35),
-    0 4px 14px rgba(184, 150, 10, 0.12);
+    0 1px 3px rgba(138, 112, 8, 0.35),
+    0 4px 14px rgba(138, 112, 8, 0.12);
 }
 :root.light .logo-text .syn-l {
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 3px rgba(154, 126, 8, 0.30),
-    0 4px 14px rgba(154, 126, 8, 0.10);
+    0 1px 3px rgba(122, 99, 7, 0.30),
+    0 4px 14px rgba(122, 99, 7, 0.10);
 }
 :root.light .logo-text .syn-d {
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 3px rgba(26, 140, 140, 0.35),
-    0 4px 14px rgba(26, 140, 140, 0.12);
+    0 1px 3px rgba(20, 114, 114, 0.35),
+    0 4px 14px rgba(20, 114, 114, 0.12);
 }
 :root.light .logo-text .syn-s {
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 3px rgba(196, 69, 58, 0.35),
-    0 4px 14px rgba(196, 69, 58, 0.12);
+    0 1px 3px rgba(168, 58, 48, 0.35),
+    0 4px 14px rgba(168, 58, 48, 0.12);
 }
 
 /* Light mode: soften row left border */
@@ -349,8 +349,8 @@ main {
 }
 
 .password-row.copy-glow .password-value span {
-  color: #FFFFFF;
-  transition: color 0.1s ease;
+  filter: brightness(1.4);
+  transition: filter 0.15s ease;
 }
 
 /* --- Mask Toggle --- */
@@ -370,9 +370,9 @@ main {
   text-shadow: none;
 }
 
-/* Suppress per-span white flash on copy when masked */
+/* Suppress brightness boost on copy when masked */
 .masked .password-row.copy-glow .password-value span {
-  color: transparent;
+  filter: none;
 }
 
 .password-row:last-child {
@@ -687,11 +687,23 @@ input[type="range"]:focus-visible {
   border-radius: 2px;
 }
 
+input[type="range"]::-moz-range-progress {
+  background: var(--accent);
+  border-radius: 2px;
+  height: 4px;
+}
+
+input[type="range"]::-moz-range-track {
+  background: var(--surface);
+  border-radius: 2px;
+  height: 4px;
+}
+
 .length-readout {
   font-family: var(--font-mono);
   font-size: 0.875rem;
   color: var(--accent);
-  min-width: 2ch;
+  min-width: 3ch;
   text-align: right;
 }
 
@@ -795,7 +807,7 @@ footer {
 .footer-trust .icon {
   width: 14px;
   height: 14px;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 footer p + p {
@@ -890,13 +902,30 @@ footer p + p {
   }
 
   .row-actions .btn-icon {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
   }
 
   .row-actions .btn-icon .icon {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .header-actions .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .toggle-pill {
+    padding: 10px 12px;
+  }
+
+  .mode-toggle {
+    font-size: 0.625rem;
+  }
+
+  .mode-option {
+    padding: 6px 8px;
   }
 
   .diy-section {
