@@ -49,7 +49,7 @@
       <div class="password-row boot-hidden" data-index="1" aria-label="Universal password">
         <div class="row-top">
           <span class="row-label">UNIVERSAL</span>
-          <kbd class="shortcut-badge" aria-hidden="true">1</kbd>
+          <kbd class="shortcut-badge" aria-hidden="true" title="Press 1 to copy">1</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Universal password" data-copy>
@@ -81,7 +81,7 @@
       <div class="password-row boot-hidden" data-index="2" aria-label="Letters and Numbers password">
         <div class="row-top">
           <span class="row-label">LETTERS &amp; NUMBERS</span>
-          <kbd class="shortcut-badge" aria-hidden="true">2</kbd>
+          <kbd class="shortcut-badge" aria-hidden="true" title="Press 2 to copy">2</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Letters and Numbers password" data-copy>
@@ -113,7 +113,7 @@
       <div class="password-row boot-hidden" data-index="3" aria-label="Short and Safe password">
         <div class="row-top">
           <span class="row-label">SHORT &amp; SAFE</span>
-          <kbd class="shortcut-badge" aria-hidden="true">3</kbd>
+          <kbd class="shortcut-badge" aria-hidden="true" title="Press 3 to copy">3</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Short and Safe password" data-copy>
@@ -145,7 +145,7 @@
       <div class="password-row boot-hidden" data-index="4" aria-label="Passphrase password">
         <div class="row-top">
           <span class="row-label">PASSPHRASE</span>
-          <kbd class="shortcut-badge" aria-hidden="true">4</kbd>
+          <kbd class="shortcut-badge" aria-hidden="true" title="Press 4 to copy">4</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Passphrase password" data-copy>
@@ -177,7 +177,7 @@
       <div class="password-row boot-hidden" data-index="5" aria-label="Maximum security password">
         <div class="row-top">
           <span class="row-label">MAXIMUM</span>
-          <kbd class="shortcut-badge" aria-hidden="true">5</kbd>
+          <kbd class="shortcut-badge" aria-hidden="true" title="Press 5 to copy">5</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Maximum security password" data-copy>
@@ -274,7 +274,13 @@
   </main>
 
   <footer>
-    <p>Generated in your browser. Nothing sent to any server. Ever.</p>
+    <p class="footer-trust">
+      <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <rect x="4" y="9" width="12" height="8" rx="1.5"/>
+        <path d="M7 9V6a3 3 0 016 0v3"/>
+      </svg>
+      Generated in your browser. Nothing sent to any server. Ever.
+    </p>
     <p class="footer-links">
       <a href="https://github.com" target="_blank" rel="noopener">Source on GitHub</a>
       &middot; MIT License

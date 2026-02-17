@@ -979,11 +979,22 @@
     startFreshnessTimer('diy');
   }
 
+  function updateSliderFill() {
+    var min = parseFloat(diySlider.min);
+    var max = parseFloat(diySlider.max);
+    var val = parseFloat(diySlider.value);
+    var pct = ((val - min) / (max - min)) * 100;
+    var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    var surface = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
+    diySlider.style.background = 'linear-gradient(to right, ' + accent + ' 0%, ' + accent + ' ' + pct + '%, ' + surface + ' ' + pct + '%, ' + surface + ' 100%)';
+  }
+
   diySlider.addEventListener('input', function () {
     var val = diySlider.value;
     diyReadout.textContent = val;
     diySlider.setAttribute('aria-valuenow', val);
     diySlider.setAttribute('aria-valuetext', val + ' characters');
+    updateSliderFill();
 
     clearTimeout(diyDebounceTimer);
     diyDebounceTimer = setTimeout(updateDIY, 50);
@@ -1019,6 +1030,7 @@
       }
 
       updateDIY();
+      updateSliderFill();
     });
 
     pill.addEventListener('keydown', function (e) {
@@ -1249,7 +1261,9 @@
         // Step 4: Password cascade + slogan
         setTimeout(function () {
           cascadeRows(0, function () {
-            // Step 5: Slogan fades in + rotation starts
+            // Step 5: Render DIY section + slogan
+            renderDIY();
+            startFreshnessTimer('diy');
             fadeInSlogan(randomSlogan());
             startSloganRotation();
           });
@@ -1338,6 +1352,8 @@
       // Update theme-color meta tag
       document.querySelector('meta[name="theme-color"]').content =
         isLight ? '#F5F3EE' : '#1A1A2E';
+      // Update slider fill for new theme colors
+      updateSliderFill();
       // Regenerate favicon with theme colors
       baseFaviconHref = generateFavicon('mkpw',
         isLight ? '#F5F3EE' : '#1A1A2E',
@@ -1371,6 +1387,9 @@
       var link = document.getElementById('favicon');
       if (link) link.href = baseFaviconHref;
     });
+
+    // Initialize slider fill indicator
+    updateSliderFill();
 
     // Run boot sequence (visual only — data and handlers already attached)
     bootSequence();
