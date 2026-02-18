@@ -1152,6 +1152,7 @@
   // ============================================
 
   document.addEventListener('keydown', function (e) {
+    if (modalOpen) return;
     var tag = document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (document.activeElement.getAttribute('role') === 'switch') return;
@@ -1656,6 +1657,74 @@
       document.getElementById('favicon').href = baseFaviconHref;
     });
   }
+
+  // ============================================
+  // Info Modal
+  // ============================================
+
+  var infoBtn = document.querySelector('.btn-info');
+  var infoModal = document.querySelector('.info-modal');
+  var infoBackdrop = infoModal.querySelector('.info-backdrop');
+  var infoCloseBtn = infoModal.querySelector('.btn-info-close');
+  var modalOpen = false;
+
+  function openInfoModal() {
+    modalOpen = true;
+    infoModal.removeAttribute('hidden');
+    infoModal.offsetHeight; // eslint-disable-line no-unused-expressions
+    infoModal.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+    document.querySelector('main').setAttribute('aria-hidden', 'true');
+    document.querySelector('footer').setAttribute('aria-hidden', 'true');
+    infoCloseBtn.focus();
+  }
+
+  function closeInfoModal() {
+    modalOpen = false;
+    infoModal.classList.remove('visible');
+    document.body.style.overflow = '';
+    document.querySelector('main').removeAttribute('aria-hidden');
+    document.querySelector('footer').removeAttribute('aria-hidden');
+    setTimeout(function () {
+      if (!modalOpen) {
+        infoModal.setAttribute('hidden', '');
+      }
+    }, 200);
+    infoBtn.focus();
+  }
+
+  function trapFocus(e) {
+    if (!modalOpen) return;
+    var focusable = Array.prototype.slice.call(
+      infoModal.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')
+    );
+    if (focusable.length === 0) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  infoBtn.addEventListener('click', openInfoModal);
+  infoBackdrop.addEventListener('click', closeInfoModal);
+  infoCloseBtn.addEventListener('click', closeInfoModal);
+
+  infoModal.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      closeInfoModal();
+      return;
+    }
+    if (e.key === 'Tab') {
+      trapFocus(e);
+    }
+  });
 
   // ============================================
   // Initialization

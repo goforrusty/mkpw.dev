@@ -32,6 +32,12 @@
             <path d="M3 17L17 3" stroke-width="2"/>
           </svg>
         </button>
+        <button class="btn-icon btn-info" aria-label="About this site">
+          <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="10" cy="10" r="8"/>
+            <path d="M10 9v5M10 6.5v.01"/>
+          </svg>
+        </button>
         <button class="btn-icon btn-theme" aria-label="Switch to light mode">
           <svg class="icon icon-sun" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <circle cx="10" cy="10" r="4"/>
@@ -49,10 +55,12 @@
       <div class="password-row boot-hidden" data-index="1" role="group" aria-label="Strong Random password">
         <div class="row-top">
           <div class="row-header">
-            <span class="row-label">STRONG RANDOM</span>
+            <div class="row-title-line">
+              <span class="row-label">STRONG RANDOM</span>
+              <kbd class="shortcut-badge" aria-hidden="true" title="Press 1 to copy">1</kbd>
+            </div>
             <span class="row-tagline">Best for most websites</span>
           </div>
-          <kbd class="shortcut-badge" aria-hidden="true" title="Press 1 to copy">1</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Strong Random password" data-copy>
@@ -84,14 +92,16 @@
       <div class="password-row boot-hidden" data-index="2" role="group" aria-label="Easy to Remember password">
         <div class="row-top">
           <div class="row-header">
-            <span class="row-label">EASY TO REMEMBER</span>
+            <div class="row-title-line">
+              <span class="row-label">EASY TO REMEMBER</span>
+              <kbd class="shortcut-badge" aria-hidden="true" title="Press 2 to copy">2</kbd>
+            </div>
             <span class="row-tagline">Memorize in minutes, strong enough for real use</span>
           </div>
           <div class="mode-toggle" role="radiogroup" aria-label="Passphrase mode">
             <button class="mode-option" role="radio" aria-checked="false" data-mode="plain">plain</button>
             <button class="mode-option active" role="radio" aria-checked="true" data-mode="decorated">decorated</button>
           </div>
-          <kbd class="shortcut-badge" aria-hidden="true" title="Press 2 to copy">2</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Easy to Remember password" data-copy>
@@ -123,10 +133,12 @@
       <div class="password-row boot-hidden" data-index="3" role="group" aria-label="No Symbols password">
         <div class="row-top">
           <div class="row-header">
-            <span class="row-label">NO SYMBOLS</span>
+            <div class="row-title-line">
+              <span class="row-label">NO SYMBOLS</span>
+              <kbd class="shortcut-badge" aria-hidden="true" title="Press 3 to copy">3</kbd>
+            </div>
             <span class="row-tagline">Letters &amp; numbers only &mdash; for picky websites</span>
           </div>
-          <kbd class="shortcut-badge" aria-hidden="true" title="Press 3 to copy">3</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy No Symbols password" data-copy>
@@ -158,10 +170,12 @@
       <div class="password-row boot-hidden" data-index="4" role="group" aria-label="Short password">
         <div class="row-top">
           <div class="row-header">
-            <span class="row-label">SHORT</span>
+            <div class="row-title-line">
+              <span class="row-label">SHORT</span>
+              <kbd class="shortcut-badge" aria-hidden="true" title="Press 4 to copy">4</kbd>
+            </div>
             <span class="row-tagline">Max strength in &le;16 characters</span>
           </div>
-          <kbd class="shortcut-badge" aria-hidden="true" title="Press 4 to copy">4</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Short password" data-copy>
@@ -193,10 +207,12 @@
       <div class="password-row boot-hidden" data-index="5" role="group" aria-label="Super Strong password">
         <div class="row-top">
           <div class="row-header">
-            <span class="row-label">SUPER STRONG</span>
+            <div class="row-title-line">
+              <span class="row-label">SUPER STRONG</span>
+              <kbd class="shortcut-badge" aria-hidden="true" title="Press 5 to copy">5</kbd>
+            </div>
             <span class="row-tagline">Extra long &mdash; for API keys &amp; encryption</span>
           </div>
-          <kbd class="shortcut-badge" aria-hidden="true" title="Press 5 to copy">5</kbd>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Super Strong password" data-copy>
@@ -303,6 +319,30 @@
       &middot; MIT License
     </p>
   </footer>
+
+  <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="info-modal-title" hidden>
+    <div class="info-backdrop"></div>
+    <div class="info-card">
+      <div class="info-card-header">
+        <h2 id="info-modal-title">How mkpw works</h2>
+        <button class="btn-icon btn-info-close" aria-label="Close">
+          <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M5 5l10 10M15 5L5 15"/>
+          </svg>
+        </button>
+      </div>
+      <ul class="info-promises">
+        <li>Passwords are generated <strong>entirely in your browser</strong> using cryptographic randomness</li>
+        <li><strong>No server</strong> is involved — this page works offline</li>
+        <li>Nothing is <strong>saved, logged, or cached</strong> — close the tab and it's gone</li>
+        <li><strong>No cookies</strong>, no localStorage, no analytics — zero tracking</li>
+        <li><strong>Open source</strong> and MIT-licensed</li>
+      </ul>
+      <p class="info-footer-note">
+        <a href="https://github.com" target="_blank" rel="noopener">View source on GitHub</a>
+      </p>
+    </div>
+  </div>
 
   <script src="js/app.js"></script>
 </body>
