@@ -11,6 +11,14 @@
 }
 
 @font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../fonts/JetBrainsMono-Thin-Latin.woff2') format('woff2');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Space Grotesk';
   src: url('../fonts/SpaceGrotesk-Latin.woff2') format('woff2');
   font-weight: 400 500;
@@ -550,6 +558,22 @@ main {
 .syn-d { color: var(--syntax-digit); }
 .syn-s { color: var(--syntax-symbol); }
 
+/* --- Password Privacy: thinner weight + reduced opacity --- */
+/* Scoped to .password-value only — logo colors stay full strength */
+.password-value {
+  font-weight: 200;
+}
+
+.password-value .syn-u { color: rgba(232, 197, 71, 0.58); }
+.password-value .syn-l { color: rgba(212, 168, 67, 0.58); }
+.password-value .syn-d { color: rgba(126, 200, 200, 0.58); }
+.password-value .syn-s { color: rgba(232, 123, 107, 0.58); }
+
+:root.light .password-value .syn-u { color: rgba(138, 112, 8, 0.58); }
+:root.light .password-value .syn-l { color: rgba(122, 99, 7, 0.58); }
+:root.light .password-value .syn-d { color: rgba(20, 114, 114, 0.58); }
+:root.light .password-value .syn-s { color: rgba(168, 58, 48, 0.58); }
+
 /* --- Copy Pulse Animation --- */
 .password-text.pulse {
   transform: scale(1.02);
@@ -1076,7 +1100,14 @@ footer p + p {
   .password-value {
     font-size: 0.6875rem;
     letter-spacing: 0px;
+    font-weight: 400;
   }
+  /* Restore full-opacity syntax colors on narrow screens to prevent
+     compounding illegibility with smaller font size */
+  .password-value .syn-u { color: var(--syntax-upper); }
+  .password-value .syn-l { color: var(--syntax-lower); }
+  .password-value .syn-d { color: var(--syntax-digit); }
+  .password-value .syn-s { color: var(--syntax-symbol); }
 }
 
 /* --- Touch device: hide shortcut badges --- */
