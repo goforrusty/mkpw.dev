@@ -120,8 +120,8 @@
 }
 
 :root.light .slogan {
-  color: rgba(138, 112, 8, 0.35);
-  text-shadow: none;
+  color: rgba(138, 112, 8, 0.50);
+  text-shadow: 0 0 12px rgba(138, 112, 8, 0.08);
 }
 
 /* Light mode: soften row left border */
