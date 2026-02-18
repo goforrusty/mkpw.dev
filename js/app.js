@@ -313,7 +313,7 @@
     {
       name: 'Easy to Remember',
       generate: function () {
-        if (!window.EFF_WORDLIST) return null;
+        if (!window.WORDLIST) return null;
         var data = generatePassphraseData();
         if (!data) return null;
         passphraseState.words = data.words;
@@ -374,8 +374,9 @@
   // ============================================
 
   function generatePassphraseData() {
-    var list = window.EFF_WORDLIST;
-    if (!list) return null;
+    var raw = window.WORDLIST;
+    if (!raw) return null;
+    var list = typeof raw === 'string' ? raw.split('\n') : raw;
 
     // Pick 4 unique words
     var words = [];
