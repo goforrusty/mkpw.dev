@@ -91,29 +91,6 @@
     }
   }
 
-  function renderPassphraseHighlighted(el, text) {
-    el.textContent = '';
-    el.setAttribute('aria-label', text);
-    var wordIndex = 0;
-    var parts = text.split(/(-)/);
-    for (var p = 0; p < parts.length; p++) {
-      var part = parts[p];
-      for (var i = 0; i < part.length; i++) {
-        var span = document.createElement('span');
-        span.textContent = part[i];
-        span.setAttribute('aria-hidden', 'true');
-        if (part === '-' || CHAR_CLASS.digit.test(part[i])) {
-          span.className = 'syn-d';
-        } else {
-          span.className = (wordIndex % 2 === 0) ? 'syn-u' : 'syn-l';
-        }
-        el.appendChild(span);
-      }
-      if (part === '-') continue;
-      if (!CHAR_CLASS.digit.test(part)) wordIndex++;
-    }
-  }
-
   // ============================================
   // Slogan Data
   // ============================================
@@ -298,7 +275,7 @@
 
   var archetypes = [
     {
-      name: 'Strong Random',
+      name: 'Strong & Universal',
       generate: function () {
         var pool = UPPER + LOWER + DIGITS + SYMBOLS_SAFE;
         var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
@@ -311,21 +288,10 @@
       length: 18
     },
     {
-      name: 'Easy to Remember',
+      name: 'Strong but Memorable',
       generate: function () {
-        if (!window.WORDLIST) return null;
-        var data = generatePassphraseData();
-        if (!data) return null;
-        passphraseState.words = data.words;
-        passphraseState.digit = data.digit;
-        passphraseState.symbol = data.symbol;
-        passphraseState.recipe = data.recipe;
-        if (passphraseState.mode === 'plain') {
-          return renderPlainPassphrase(passphraseState);
-        }
-        return renderDecoratedPassphrase(passphraseState);
-      },
-      isPassphrase: true
+        return generateStoryPassword();
+      }
     },
     {
       name: 'No Symbols',
@@ -339,7 +305,7 @@
       length: 22
     },
     {
-      name: 'Short',
+      name: 'Short but Mighty',
       generate: function () {
         var pool = UPPER + LOWER + DIGITS + SYMBOLS_SAFE;
         var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
@@ -370,185 +336,592 @@
   var PASSPHRASE_INDEX = 1;
 
   // ============================================
-  // Passphrase Generation & Rendering
+  // Story Password Generation
   // ============================================
 
-  function generatePassphraseData() {
-    var raw = window.WORDLIST;
-    if (!raw) return null;
-    var list = typeof raw === 'string' ? raw.split('\n') : raw;
+  var STORY_PUNCTUATION = ['!', '?'];
+  var STORY_PATTERNS = ['ordinal', 'year', 'time', 'six'];
 
-    // Pick 4 unique words
-    var words = [];
-    var used = {};
-    var maxAttempts = 100;
-    while (words.length < 4 && maxAttempts-- > 0) {
-      var w = list[randomInt(list.length)];
+  var STORY_SCHEMAS = [
+    { id: 'scene-a', base: ['X', 'V', 'R', 'A', 'O'], six: ['X', 'V', 'R', 'A', 'O', 'T'], actorPool: 'mixed' },
+    { id: 'scene-b', base: ['A', 'O', 'V', 'R', 'X'], six: ['A', 'O', 'V', 'R', 'X', 'T'], actorPool: 'mixed' },
+    { id: 'scene-c', base: ['X', 'V', 'O', 'R', 'A'], six: ['X', 'V', 'O', 'R', 'A', 'T'], actorPool: 'mixed' },
+    { id: 'scene-d', base: ['O', 'V', 'R', 'X', 'A'], six: ['O', 'V', 'R', 'X', 'A', 'T'], actorPool: 'mixed' },
+    { id: 'scene-e', base: ['A', 'X', 'V', 'R', 'O'], six: ['A', 'X', 'V', 'R', 'O', 'T'], actorPool: 'mixed' },
+    { id: 'scene-f', base: ['X', 'V', 'R', 'A', 'O'], six: ['X', 'V', 'R', 'A', 'O', 'T'], actorPool: 'names' },
+    { id: 'scene-g', base: ['O', 'R', 'A', 'X', 'V'], six: ['O', 'R', 'A', 'X', 'V', 'T'], actorPool: 'mixed' }
+  ];
+
+  function words(text) {
+    return text.trim().split(/\s+/);
+  }
+
+  function uniqueWords(arr) {
+    var out = [];
+    var seen = {};
+    for (var i = 0; i < arr.length; i++) {
+      var w = String(arr[i] || '').trim().toLowerCase();
+      if (!w || seen[w]) continue;
+      seen[w] = true;
+      out.push(w);
+    }
+    return out;
+  }
+
+  function makeWordSet(arr) {
+    var set = {};
+    for (var i = 0; i < arr.length; i++) {
+      var w = String(arr[i] || '').trim().toLowerCase();
+      if (w) set[w] = true;
+    }
+    return set;
+  }
+
+  function hasOwn(obj, key) {
+    return Object.prototype.hasOwnProperty.call(obj, key);
+  }
+
+  function hasAnySuffix(word, suffixes) {
+    for (var i = 0; i < suffixes.length; i++) {
+      if (word.length > suffixes[i].length + 1 && word.slice(-suffixes[i].length) === suffixes[i]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function hashWord(word) {
+    var h = 2166136261;
+    for (var i = 0; i < word.length; i++) {
+      h ^= word.charCodeAt(i);
+      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+    }
+    return h >>> 0;
+  }
+
+  function capWordPool(pool, cap) {
+    var unique = uniqueWords(pool);
+    if (unique.length <= cap) return unique;
+    unique.sort(function (a, b) {
+      var ha = hashWord(a);
+      var hb = hashWord(b);
+      if (ha !== hb) return ha - hb;
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
+    return unique.slice(0, cap);
+  }
+
+  function loadBaseLexiconWords() {
+    if (typeof window !== 'undefined' && typeof window.WORDLIST === 'string' && window.WORDLIST.length > 0) {
+      return uniqueWords(window.WORDLIST.split('\n'));
+    }
+    return [];
+  }
+
+  function pick(pool) {
+    return pool[randomInt(pool.length)];
+  }
+
+  function pickUnique(pool, used, maxAttempts) {
+    var attempts = maxAttempts || 60;
+    while (attempts-- > 0) {
+      var w = pick(pool);
       if (!used[w]) {
-        words.push(w);
         used[w] = true;
+        return w;
+      }
+    }
+    return pick(pool);
+  }
+
+  function pickBiasedUnique(primaryPool, fallbackPool, used, primaryChancePct) {
+    if (primaryPool.length > 0 && randomInt(100) < primaryChancePct) {
+      return pickUnique(primaryPool, used);
+    }
+    return pickUnique(fallbackPool, used);
+  }
+
+  function titleCaseWord(word) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }
+
+  // Global short names (<=5 chars) across diverse origins, ASCII transliterated.
+  var GLOBAL_NAME_WORDS = uniqueWords(
+    // Spanish / Portuguese
+    words('ana luis jose juan maria mario diego lucia sofia carla pablo rita ines raul pedro bruno')
+      // Indian (multiple language groups)
+      .concat(words('aarav arjun neha priya riya diya isha kabir anaya meera rohan rahul tara anil'))
+      // Italian
+      .concat(words('luca marco paolo enzo dario elia sara anna gino nina carlo'))
+      // Arabic
+      .concat(words('omar ali sami ziad noor lina yara rami salma amir faris nada'))
+      // Greek
+      .concat(words('niko yanni eleni irene dora petra alex yiota aris teo'))
+      // German
+      .concat(words('hans klaus petra heidi lars greta nina lena tobi erik'))
+      // Russian
+      .concat(words('ivan olga dima masha irina pavel yulia nika oleg lena'))
+      // Ukrainian
+      .concat(words('oleg ivan liza yura ira roman inna olena tara yana'))
+      // Hungarian
+      .concat(words('bela zoli anna reka lili adam tamas eszti vera dora'))
+      // French
+      .concat(words('lucie marie paul remi chloe clara hugo leo noel elise'))
+      // Turkish
+      .concat(words('emir elif deniz ece cenk berk selin kerem naz asli'))
+      // Persian
+      .concat(words('arya omid leila darya parsa shadi roza sina mina nilo'))
+      // Polish
+      .concat(words('ania ola marta piotr pawel marek lena kuba iga tomek'))
+      // Czech / Slovak
+      .concat(words('jana vera pavel klara roman david tomas lucie adela iveta'))
+      // Romanian
+      .concat(words('ion ioan ana mara vlad dora ilie radu oana sora'))
+      // Hebrew
+      .concat(words('noam yael lior idan itai aviv tal adi ori yona'))
+      // Japanese (romanized)
+      .concat(words('yuki riku ren mei aoi hina sota haru akira nao'))
+      // Korean (romanized)
+      .concat(words('min joon jiho yuna suji bora hana seon jiye taey'))
+      // Chinese (pinyin)
+      .concat(words('li wei hao ming yu chen yan lin mei tao'))
+      // Vietnamese
+      .concat(words('linh minh trang hanh an bao dung ngoc quynh phuc'))
+      // Indonesian / Malay
+      .concat(words('putri dewi adi putra agus sari reza bima rani eka'))
+      // Filipino
+      .concat(words('liza nico joel paolo mila ina rina carlo gina noel'))
+      // East African / Swahili usage
+      .concat(words('amani zuri juma neema imani alia zain omari ayan hali'))
+  );
+
+  var CREATURE_ROLE_WORDS = uniqueWords(words(
+    'otter badger panda llama tiger eagle koala moose goose raven robin gecko puppy kitten falcon shark whale penguin beaver hamster weasel yak zebra parrot monkey dragon ninja pirate pilot ranger drummer baker barber coder doctor poet skater surfer captain scout monk robot droid farmer courier boxer sailor diver miner artist waiter singer dancer driver'
+  ));
+  var RELATION_WORDS = uniqueWords(words(
+    'under over near beside around behind before after during while inside outside across between beyond beneath within toward against atop below along amid among past through'
+  ));
+
+  var STORY_RAW_BASE_WORDS = loadBaseLexiconWords();
+  var STORY_ASCII_RE = /^[a-z]+$/;
+  var STORY_COMMON_STOP_WORDS = makeWordSet(words(
+    'a an and another as at be been being but by each few for from if in into is it its itself many me mine most much my myself no not of off on onto or our ours ourselves same she he him his her hers their theirs them themselves then they this those to too up very we what when where who why will with without you your yours yourself yourselves'
+  ));
+  var STORY_SFW_EXCLUDE_WORDS = makeWordSet(words(
+    'badass asshole asshat bastard bitch bitchy bullshit cock cocksucker cunt damn douche douchebag fuck fucker fucking horny motherfucker prick pussy shit shitty slut thong whore panty gonad rectal racist racism islam islamic prozac walmart google yahoo xbox myspace ipad ipod'
+  ));
+
+  function isStoryBaseWord(word) {
+    if (!STORY_ASCII_RE.test(word)) return false;
+    if (word.length < 3 || word.length > 10) return false;
+    if (hasOwn(STORY_COMMON_STOP_WORDS, word)) return false;
+    if (hasOwn(STORY_SFW_EXCLUDE_WORDS, word)) return false;
+    return true;
+  }
+
+  var STORY_BASE_WORDS = (function () {
+    var out = [];
+    for (var i = 0; i < STORY_RAW_BASE_WORDS.length; i++) {
+      var w = STORY_RAW_BASE_WORDS[i];
+      if (isStoryBaseWord(w)) out.push(w);
+    }
+    return uniqueWords(out);
+  })();
+  var STORY_BASE_SET = makeWordSet(STORY_BASE_WORDS);
+
+  var VERB_ROOT_SEED_WORDS = uniqueWords(words(
+    'juggle yodel launch paint tickle hug whistle zigzag moonwalk wobble balance spin twirl flip hop dash sneak race zoom glide drift bounce nudge poke tap knead fold stack mix stir grill toast fry brew sip munch chase bump boop zap weld patch tune polish spray knit crochet sketch doodle hum sing chant clap snap dribble paddle surf skate cart pack ship mail sort scan count measure map trace carve sculpt mold forge stitch iron vacuum sweep dust water plant trim harvest chop peel squeeze crack smash build code debug deploy refactor mock test merge rebase ping ponder mutter laugh grin smirk gawk blink daydream plot invent guess decide announce confess approve reject roast curse swear cuss bicker argue negotiate bargain trade borrow return hide reveal uncork uncap unwrap jam collect connect adapt adjust avoid await begin bring call carry catch change check climb close compare confess cook crawl create cross dance decide deliver design destroy divide draw drink drive drop edit enjoy enter escape evolve expand explain explore fade fail fetch fight fill find finish fix float follow force forget gather give glance grab grow guide handle help hike hold hover hunt imagine improve include inform invite join joke jump keep kick knock know leave lift like listen live lock look make march move need open order paint pass pause pick place plan play point pop pour prefer prepare press protect push reach read record relax remove repair replace reply report rescue rest ride ring roll rub run save scan score search seem send settle shape share shift shout show shut sing sit sketch skip sleep slide smile sniff solve sort sound speak spin split sprint stand start stay step stop stretch strike study surf swap swing switch taste teach tell think throw trace trade train travel treat trust turn twist type unlock update use visit wait walk watch wear whisper win wish work write zoom depend survive vanish remain exist continue appear happen allow'
+  ));
+  VERB_ROOT_SEED_WORDS = uniqueWords(VERB_ROOT_SEED_WORDS.concat(words(
+    'accept achieve add admit adopt advise agree ask assume belong break buy cover cut describe disappear discover eat expect face fall feel get happen have hear hit hold keep know learn let lose love mean meet own pay prove put say see seem send set sit speak spend stand stay stop suggest take talk touch understand want'
+  )));
+  var VERB_ROOT_SEED_SET = makeWordSet(VERB_ROOT_SEED_WORDS);
+  var VERB_NOUNISH_SUFFIXES = ['tion', 'sion', 'ment', 'ness', 'ity', 'ship', 'hood', 'ism', 'ist', 'age', 'ence', 'ance'];
+  var VERB_HARD_BLOCK = makeWordSet(words(
+    'acid actor actress agency album alcohol angel annual answer anyone avenue author award beauty because before beyond biology brother business camera capital century chapter charity cheese chicken citizen coffee college color company country custom culture damage decade degree demand dental doctor dollar double drawing driving during email energy engine entire episode ethics family federal female finance fitness forever freedom friend future gender general grocery guitar habit handle history holiday hundred impact income indeed injury inside island itself junior kidney kitchen language launch league legacy lesson letter little living manual member memory method middle minute modern module monday month mostly mother nature nearly nearby neither network notice number object office option origin parent people person phone photo piece planet policy popular portion power prayer premium present private problem process product project promise proper public purpose quarter random rather rating reason recent record region regular remain remote remove report result review reward rhythm school science season section senior service setting should signal simple sister social source speech square status steady street stress strong studio submit subject success summer sunday supply system target teacher thanks theory thirty though thought thread ticket title today toilet toward travel treaty truly trustuesday tuition unique unlock update upload utility valley variety versus victim video village visual volume wallet wanted warning wealth wedding weekend window winner winter within without wonder worker world writing'
+  ));
+
+  function hasVerbInflection(root, set) {
+    var forms = [root + 'ing', root + 'ed'];
+
+    if (root.length > 1 && root.slice(-1) === 'e') {
+      forms.push(root.slice(0, -1) + 'ing');
+      forms.push(root + 'd');
+    }
+
+    if (root.length > 1 && root.slice(-1) === 'y' && !/[aeiou]y$/.test(root)) {
+      forms.push(root.slice(0, -1) + 'ied');
+      forms.push(root + 'ing');
+    }
+
+    if (root.length > 2) {
+      var c0 = root.charAt(root.length - 3);
+      var c1 = root.charAt(root.length - 2);
+      var c2 = root.charAt(root.length - 1);
+      if (!/[aeiou]/.test(c0) && /[aeiou]/.test(c1) && !/[aeiouwxy]/.test(c2)) {
+        forms.push(root + c2 + 'ing');
+        forms.push(root + c2 + 'ed');
       }
     }
 
-    var digit = randomInt(10);
-    var symbol = SYMBOLS_SAFE[randomInt(SYMBOLS_SAFE.length)];
-    var recipe = generateRecipe(words.length);
-
-    return { words: words, digit: digit, symbol: symbol, recipe: recipe };
+    for (var i = 0; i < forms.length; i++) {
+      if (hasOwn(set, forms[i])) return true;
+    }
+    return false;
   }
 
-  function generateRecipe(wordCount) {
-    var separators = ['-', '.', '_'];
-    var sep = separators[randomInt(separators.length)];
+  function isLikelyVerbRoot(word, set) {
+    if (word.length < 3 || word.length > 9) return false;
+    if (hasOwn(VERB_HARD_BLOCK, word)) return false;
+    if (hasAnySuffix(word, VERB_NOUNISH_SUFFIXES)) return false;
+    if (word.slice(-2) === 'ly') return false;
+    if (hasOwn(VERB_ROOT_SEED_SET, word)) return true;
+    if (hasVerbInflection(word, set)) return true;
+    return false;
+  }
 
-    // Capitalization: at least one title-case, at least one lowercase
-    var caps = [];
-    for (var i = 0; i < wordCount; i++) caps.push(randomInt(2) === 0);
-    if (caps.every(function (c) { return c; })) caps[randomInt(wordCount)] = false;
-    if (caps.every(function (c) { return !c; })) caps[randomInt(wordCount)] = true;
+  function toThirdPersonSingular(root) {
+    if (root === 'be') return 'is';
+    if (root === 'have') return 'has';
+    if (root === 'do') return 'does';
+    if (root === 'go') return 'goes';
+    if (/(s|x|z|ch|sh|o)$/.test(root)) return root + 'es';
+    if (/[^aeiou]y$/.test(root)) return root.slice(0, -1) + 'ies';
+    return root + 's';
+  }
 
-    var digitWord = randomInt(wordCount);
-    var digitSide = randomInt(2) === 0 ? 'prefix' : 'suffix';
+  function buildVerbRoots() {
+    var roots = VERB_ROOT_SEED_WORDS.slice();
+    for (var i = 0; i < STORY_BASE_WORDS.length; i++) {
+      var w = STORY_BASE_WORDS[i];
+      if (isLikelyVerbRoot(w, STORY_BASE_SET)) roots.push(w);
+    }
+    return uniqueWords(roots);
+  }
 
-    var symbolWord = randomInt(wordCount);
-    var symbolSide = randomInt(2) === 0 ? 'prefix' : 'suffix';
+  function buildVerbWords(roots) {
+    var verbs = [];
+    for (var j = 0; j < roots.length; j++) {
+      var form = toThirdPersonSingular(roots[j]);
+      if (!STORY_ASCII_RE.test(form)) continue;
+      if (form.length < 4 || form.length > 12) continue;
+      if (hasOwn(STORY_SFW_EXCLUDE_WORDS, form)) continue;
+      verbs.push(form);
+    }
+    return uniqueWords(verbs);
+  }
 
-    var digitFirst = randomInt(2) === 0;
+  var ADJECTIVE_SEED_WORDS = uniqueWords(words(
+    'fuzzy neon tiny sleepy crispy golden rubber cosmic wobbly spicy frosty silky mellow zesty dusty glossy noisy sneaky quirky nimble brisk calm brave goofy jazzy gritty shiny stormy sunny misty smoky fluffy prickly chunky bouncy wiry rusty icy peppery sugary salty minty sour bitter soft loud quiet rapid gentle odd fancy dapper clever cheeky scrappy tidy messy classy clumsy snappy glitchy pixel windy lunar solar velvet woolly speedy sturdy thirsty hungry cranky happy moody smug feral noble regal groovy funky silly absurd awkward vivid bright dim muted bold timid narrow broad mighty wee giant mini turbo stealthy sparkly fizzy gummy gooey loopy zippy punchy crunchy spooky kooky snazzy peppy perky rowdy nerdy dorky wonky feisty nifty breezy squishy jolly merry zany wacky sassy saucy tangy jammy toasty nutty citrusy creamy buttery herby glittery candy plush poppy radiant dreamy lanky boozy'
+  ));
+  var ADJECTIVE_SEED_SET = makeWordSet(ADJECTIVE_SEED_WORDS);
+  var ADJECTIVE_SUFFIXES = ['ful', 'less', 'ous', 'ish'];
+  var ADJECTIVE_BORING_WORDS = makeWordSet(words(
+    'able basic certain common current direct exact final formal general global legal local major minor modern normal official proper public real regular related simple single standard typical usual valid various whole entire former latter neutral random ready recent serious stable superior inferior primary secondary corporate fiscal annual monthly weekly daily hourly digital analog numeric logical physical virtual modular popular private easy calm gentle curious high low payable liable'
+  ));
 
-    return {
-      separator: sep,
-      caps: caps,
-      digitWord: digitWord,
-      digitSide: digitSide,
-      symbolWord: symbolWord,
-      symbolSide: symbolSide,
-      digitFirst: digitFirst
+  function isLikelyAdjective(word, set) {
+    if (word.length < 3 || word.length > 10) return false;
+    if (hasOwn(ADJECTIVE_BORING_WORDS, word)) return false;
+    if (hasOwn(ADJECTIVE_SEED_SET, word)) return true;
+    if (hasOwn(VERB_ROOT_SET, word)) return false;
+    if (hasOwn(VERB_WORD_SET, word)) return false;
+    if (hasVerbInflection(word, STORY_BASE_SET)) return false;
+    if (hasOwn(set, word + 'ly') && word.length > 3 && word.slice(-2) !== 'ly') return true;
+    if (word.slice(-1) === 'y' && hasOwn(set, word.slice(0, -1) + 'ily')) return true;
+    if (hasAnySuffix(word, ADJECTIVE_SUFFIXES)) return true;
+    return false;
+  }
+
+  function buildAdjectiveWords() {
+    var out = ADJECTIVE_SEED_WORDS.slice();
+    for (var i = 0; i < STORY_BASE_WORDS.length; i++) {
+      var w = STORY_BASE_WORDS[i];
+      if (isLikelyAdjective(w, STORY_BASE_SET)) out.push(w);
+    }
+    return uniqueWords(out);
+  }
+
+  var TWIST_SEED_WORDS = uniqueWords(words(
+    'proudly cheerfully boldly gently brightly suddenly quietly loudly awkwardly wildly gladly neatly warmly softly swiftly slowly shamelessly weirdly playfully bravely eagerly lazily nervously calmly smugly politely gleefully oddly smoothly instantly carefully clumsily happily sadly grumpily sassily frankly plainly totally mostly lightly barely nearly hugely deeply sharply wisely merrily promptly honestly blatantly'
+  ));
+  var TWIST_BLOCK = makeWordSet(words('family italy july rally fully reply supply only ugly'));
+
+  function isLikelyTwistWord(word) {
+    if (word.length < 4 || word.length > 12) return false;
+    if (hasOwn(TWIST_BLOCK, word)) return false;
+    if (word.slice(-2) !== 'ly') return false;
+    return true;
+  }
+
+  function buildTwistWords() {
+    var out = TWIST_SEED_WORDS.slice();
+    for (var i = 0; i < STORY_BASE_WORDS.length; i++) {
+      var w = STORY_BASE_WORDS[i];
+      if (isLikelyTwistWord(w)) out.push(w);
+    }
+    return uniqueWords(out);
+  }
+
+  var OBJECT_SEED_WORDS = uniqueWords(words(
+    'toaster teapot burrito cactus rocket helmet guitar pickle donut muffin lantern scooter lamppost pancake waffle cookie kettle bucket hammer wrench zipper button pillow blanket slipper sandal backpack notebook stapler marker crayon whistle trumpet banjo ukulele tambourine boombox camera tripod compass magnet battery socket cable router modem keyboard mouse joystick gamepad puzzle marble domino kite frisbee skateboard surfboard kayak canoe umbrella raincoat mug goblet spoon fork spatula ladle colander saucepan skillet cupcake pretzel popcorn taco nacho dumpling ravioli baguette croissant bagel pineapple coconut avocado turnip carrot radish pumpkin melon grape cherry peach lemon lime onion garlic celery broccoli spinach tofu ramen sushi bento thermos flask bottle jar vase mirror candle towel soap sponge mop broom vacuum ladder shovel visor scarf mittens jacket poncho pinata confetti kazoo maracas bongos keytar clarinet marimba megaphone monocle beret tiara kimono sombrero jetpack hoverboard boomerang slingshot yoyo lollipop jellybean gumball snowglobe firework sparkler discoball pogo keychain sticker comic postcard teacup mooncake bathbomb goggles rubberduck mochi kimchi'
+  ));
+  var OBJECT_SEED_SET = makeWordSet(OBJECT_SEED_WORDS);
+  var OBJECT_EXCLUDE_WORDS = makeWordSet(words(
+    'about above across after again against almost along also among around because before behind below beside between beyond during either enough every maybe might never often other since some someone something their there these thing think those toward under until where while which whose without within unknown known likely likelyly maybe perhaps always usually mostly online offline upward downward inside outside'
+  ));
+  var OBJECT_BLAND_WORDS = makeWordSet(words(
+    'account address agency amount answer area aspect attempt author average benefit capital category century chapter choice citizen client college comment company concept consent context control country county culture data decade degree demand detail device effect effort energy entity entry error example factor feature finance function future goal group history impact income index industry info insight issue item language level limit logic method minute model module moment month number office option output parent people person phase policy problem process product profile project purpose quality quantity quarter reason record region report request result review role section sector service setting signal source standard status subject success support survey system target theory title topic value version volume world another upper lower former latter manager proton ascent filth gory wince glance'
+  ));
+  var OBJECT_ABSTRACT_SUFFIXES = ['tion', 'sion', 'ness', 'ity', 'ship', 'hood', 'ism', 'ence', 'ance'];
+
+  var VERB_ROOT_WORDS = buildVerbRoots();
+  var VERB_ROOT_SET = makeWordSet(VERB_ROOT_WORDS);
+  var VERB_WORDS = buildVerbWords(VERB_ROOT_WORDS);
+  var VERB_WORD_SET = makeWordSet(VERB_WORDS);
+  var ADJECTIVE_WORDS = buildAdjectiveWords();
+  var ADJECTIVE_WORD_SET = makeWordSet(ADJECTIVE_WORDS);
+  var TWIST_WORDS = buildTwistWords();
+  var TWIST_WORD_SET = makeWordSet(TWIST_WORDS);
+
+  function isConjugatedVerbForm(word) {
+    if (word.length > 4 && (word.slice(-3) === 'ing' || word.slice(-2) === 'ed')) return true;
+    if (word.length > 4 && word.slice(-3) === 'ies') {
+      return hasOwn(VERB_ROOT_SET, word.slice(0, -3) + 'y');
+    }
+    if (word.length > 3 && word.slice(-2) === 'es') {
+      var rootEs = word.slice(0, -2);
+      if (hasOwn(VERB_ROOT_SET, rootEs)) return true;
+      if (hasOwn(VERB_ROOT_SET, rootEs + 'e')) return true;
+    }
+    if (word.length > 3 && word.slice(-1) === 's') {
+      return hasOwn(VERB_ROOT_SET, word.slice(0, -1));
+    }
+    return false;
+  }
+
+  function isLikelyObjectWord(word) {
+    if (word.length < 3 || word.length > 10) return false;
+    if (hasOwn(OBJECT_SEED_SET, word)) return true;
+    if (hasOwn(OBJECT_EXCLUDE_WORDS, word)) return false;
+    if (hasOwn(OBJECT_BLAND_WORDS, word)) return false;
+    if (hasAnySuffix(word, OBJECT_ABSTRACT_SUFFIXES)) return false;
+    if (hasAnySuffix(word, ['ate', 'ize', 'ise'])) return false;
+    if (hasAnySuffix(word, ['ous', 'ive', 'ful', 'less', 'ish', 'able', 'ible'])) return false;
+    if (word.slice(-2) === 'ly') return false;
+    if (hasVerbInflection(word, STORY_BASE_SET)) return false;
+    if (isConjugatedVerbForm(word)) return false;
+    if (hasOwn(VERB_ROOT_SET, word)) return false;
+    if (hasOwn(VERB_WORD_SET, word)) return false;
+    if (hasOwn(ADJECTIVE_WORD_SET, word)) return false;
+    if (hasOwn(TWIST_WORD_SET, word)) return false;
+    if (hasOwn(STORY_COMMON_STOP_WORDS, word)) return false;
+    return true;
+  }
+
+  function buildObjectWords() {
+    var out = OBJECT_SEED_WORDS.slice();
+    var dynamic = [];
+    for (var i = 0; i < STORY_BASE_WORDS.length; i++) {
+      var w = STORY_BASE_WORDS[i];
+      if (!isLikelyObjectWord(w)) continue;
+      if (!hasOwn(OBJECT_SEED_SET, w)) dynamic.push(w);
+    }
+    dynamic = capWordPool(dynamic, 900);
+    return uniqueWords(out.concat(dynamic));
+  }
+
+  var OBJECT_WORDS = buildObjectWords();
+
+  function buildVividAdjectiveWords() {
+    var dynamic = [];
+    for (var i = 0; i < ADJECTIVE_WORDS.length; i++) {
+      var w = ADJECTIVE_WORDS[i];
+      if (hasOwn(ADJECTIVE_SEED_SET, w)) continue;
+      if (hasAnySuffix(w, ['y', 'ish', 'ous', 'ful', 'less'])) dynamic.push(w);
+    }
+    dynamic = capWordPool(dynamic, 420);
+    return uniqueWords(ADJECTIVE_SEED_WORDS.concat(dynamic));
+  }
+
+  function buildVividObjectWords() {
+    var dynamic = [];
+    for (var i = 0; i < OBJECT_WORDS.length; i++) {
+      var w = OBJECT_WORDS[i];
+      if (hasOwn(OBJECT_SEED_SET, w)) continue;
+      if (w.length < 4 || w.length > 8) continue;
+      if (hasOwn(OBJECT_BLAND_WORDS, w)) continue;
+      if (hasAnySuffix(w, OBJECT_ABSTRACT_SUFFIXES)) continue;
+      dynamic.push(w);
+    }
+    dynamic = capWordPool(dynamic, 900);
+    return uniqueWords(OBJECT_SEED_WORDS.concat(dynamic));
+  }
+
+  var ADJECTIVE_VIVID_WORDS = buildVividAdjectiveWords();
+  var OBJECT_VIVID_WORDS = buildVividObjectWords();
+
+  var EXTRA_ACTOR_WORDS = uniqueWords(words(
+    'actor actress acrobat agent artist athlete baker barber boxer captain chef clerk coach courier dancer diver doctor driver farmer fighter friend guide hacker hero hunter judge knight leader mentor ninja nurse painter pilot pirate poet ranger reader rider runner sailor scout singer skater speaker surfer teacher traveler waiter warrior writer yak zebra rabbit dolphin turtle horse pony donkey wolf bear lion goat sheep owl hawk crow fox swan beagle collie spaniel poodle jaguar leopard panther'
+  ));
+  var MIXED_ACTOR_WORDS = uniqueWords(CREATURE_ROLE_WORDS.concat(GLOBAL_NAME_WORDS, EXTRA_ACTOR_WORDS));
+
+  var STORY_LEXICON_STATS = {
+    baseWords: STORY_BASE_WORDS.length,
+    names: GLOBAL_NAME_WORDS.length,
+    creatureRoles: CREATURE_ROLE_WORDS.length,
+    mixedActors: MIXED_ACTOR_WORDS.length,
+    relations: RELATION_WORDS.length,
+    verbs: VERB_WORDS.length,
+    adjectives: ADJECTIVE_WORDS.length,
+    adjectivesVivid: ADJECTIVE_VIVID_WORDS.length,
+    objects: OBJECT_WORDS.length,
+    objectsVivid: OBJECT_VIVID_WORDS.length,
+    twists: TWIST_WORDS.length,
+    totalUnique: uniqueWords(
+      GLOBAL_NAME_WORDS
+        .concat(CREATURE_ROLE_WORDS, RELATION_WORDS, VERB_WORDS, ADJECTIVE_WORDS, OBJECT_WORDS, TWIST_WORDS)
+    ).length
+  };
+
+  if (typeof window !== 'undefined') {
+    window.__MKPW_STORY_LEXICON_STATS = STORY_LEXICON_STATS;
+  }
+
+  var PROFANE_ADJECTIVE_WORDS = uniqueWords(words(
+    'shitty damn fucking filthy crappy bitchy horny raunchy nasty'
+  ));
+
+  var PROFANE_OBJECT_WORDS = uniqueWords(words(
+    'bullshit shitshow asshole dumbass asshat bastard douchebag fuckery'
+  ));
+
+  var PROFANE_VERB_WORDS = uniqueWords(words(
+    'swears curses cusses fucks bitches'
+  ));
+
+  var PROFANE_TWIST_WORDS = uniqueWords(words(
+    'damnably shittily fuckingly foully bitchily'
+  ));
+
+  var storyState = {
+    sfw: 'on',
+    schemaId: '',
+    patternId: '',
+    password: ''
+  };
+
+  function randomYear1901to2099() {
+    return String(1901 + randomInt(199));
+  }
+
+  function randomHalfHour24h() {
+    var slot = randomInt(48);
+    var hour = Math.floor(slot / 2);
+    var minute = slot % 2 === 0 ? '00' : '30';
+    var hh = hour < 10 ? '0' + hour : String(hour);
+    return hh + ':' + minute;
+  }
+
+  function randomOrdinal10to99() {
+    var value = 10 + randomInt(90);
+    var mod100 = value % 100;
+    var mod10 = value % 10;
+    var suffix = 'th';
+    if (mod100 < 11 || mod100 > 13) {
+      if (mod10 === 1) suffix = 'st';
+      else if (mod10 === 2) suffix = 'nd';
+      else if (mod10 === 3) suffix = 'rd';
+    }
+    return String(value) + suffix;
+  }
+
+  function fillStorySlots(schema, includeTwist) {
+    var used = {};
+    var slots = {};
+    var actorPool = schema.actorPool === 'names' ? GLOBAL_NAME_WORDS : MIXED_ACTOR_WORDS;
+
+    slots.X = pickUnique(actorPool, used);
+    slots.V = pickUnique(VERB_WORDS, used);
+    slots.R = pick(RELATION_WORDS);
+    slots.A = pickBiasedUnique(ADJECTIVE_VIVID_WORDS, ADJECTIVE_WORDS, used, 78);
+    slots.O = pickBiasedUnique(OBJECT_VIVID_WORDS, OBJECT_WORDS, used, 72);
+    if (includeTwist) {
+      slots.T = pickUnique(TWIST_WORDS, used);
+    }
+
+    return slots;
+  }
+
+  function injectProfanity(slots) {
+    var profanityTargets = [];
+    if (slots.A) profanityTargets.push('A');
+    if (slots.O) profanityTargets.push('O');
+    if (slots.V) profanityTargets.push('V');
+    if (slots.T) profanityTargets.push('T');
+    var target = profanityTargets[randomInt(profanityTargets.length)];
+    if (target === 'A') slots.A = pick(PROFANE_ADJECTIVE_WORDS);
+    else if (target === 'O') slots.O = pick(PROFANE_OBJECT_WORDS);
+    else if (target === 'V') slots.V = pick(PROFANE_VERB_WORDS);
+    else slots.T = pick(PROFANE_TWIST_WORDS);
+  }
+
+  function renderStoryPassword(data) {
+    var order = data.patternId === 'six' ? data.schema.six : data.schema.base;
+    var parts = [];
+
+    for (var i = 0; i < order.length; i++) {
+      var slot = order[i];
+      if (data.patternId === 'ordinal' && slot === 'O') {
+        parts.push(data.ordinal);
+      }
+      var token = data.slots[slot];
+      if (slot === 'X') token = titleCaseWord(token);
+      parts.push(token);
+    }
+
+    if (data.patternId === 'year') {
+      parts.push('in');
+      parts.push(data.year);
+    }
+
+    var body = parts.join('-');
+    if (data.patternId === 'time') {
+      body = 'At-' + data.time24 + '-' + body;
+    }
+
+    return body + data.punctuation;
+  }
+
+  function generateStoryPassword() {
+    var schema = STORY_SCHEMAS[randomInt(STORY_SCHEMAS.length)];
+    var patternId = STORY_PATTERNS[randomInt(STORY_PATTERNS.length)];
+    var includeTwist = patternId === 'six';
+    var slots = fillStorySlots(schema, includeTwist);
+
+    if (storyState.sfw === 'off') {
+      injectProfanity(slots);
+    }
+
+    var data = {
+      schema: schema,
+      patternId: patternId,
+      slots: slots,
+      punctuation: STORY_PUNCTUATION[randomInt(STORY_PUNCTUATION.length)],
+      ordinal: '',
+      year: '',
+      time24: ''
     };
-  }
 
-  function renderPlainPassphrase(data) {
-    return data.words.map(function (w) {
-      return w.charAt(0).toUpperCase() + w.slice(1);
-    }).join('-');
-  }
+    if (patternId === 'ordinal') data.ordinal = randomOrdinal10to99();
+    if (patternId === 'year') data.year = randomYear1901to2099();
+    if (patternId === 'time') data.time24 = randomHalfHour24h();
 
-  function renderDecoratedPassphrase(data) {
-    var r = data.recipe;
-    var parts = data.words.map(function (w, i) {
-      var word = r.caps[i]
-        ? w.charAt(0).toUpperCase() + w.slice(1)
-        : w.toLowerCase();
-
-      var prefix = '';
-      var suffix = '';
-
-      var hasDigit = (r.digitWord === i);
-      var hasSymbol = (r.symbolWord === i);
-
-      if (hasDigit && hasSymbol && r.digitSide === r.symbolSide) {
-        // Both on same side — use digitFirst to order
-        var d = String(data.digit);
-        var s = data.symbol;
-        var ordered = r.digitFirst ? d + s : s + d;
-        if (r.digitSide === 'prefix') {
-          prefix = ordered;
-        } else {
-          suffix = ordered;
-        }
-      } else {
-        if (hasDigit) {
-          if (r.digitSide === 'prefix') prefix += String(data.digit);
-          else suffix += String(data.digit);
-        }
-        if (hasSymbol) {
-          if (r.symbolSide === 'prefix') prefix += data.symbol;
-          else suffix += data.symbol;
-        }
-      }
-
-      return prefix + word + suffix;
-    });
-
-    return parts.join(r.separator);
-  }
-
-  // Build highlighted spans from passphrase state (avoids fragile string parsing)
-  function renderPassphraseDecoratedHighlighted(el, data) {
-    el.textContent = '';
-    var text = renderDecoratedPassphrase(data);
-    el.setAttribute('aria-label', text);
-
-    var r = data.recipe;
-
-    data.words.forEach(function (w, i) {
-      var word = r.caps[i]
-        ? w.charAt(0).toUpperCase() + w.slice(1)
-        : w.toLowerCase();
-
-      var hasDigit = (r.digitWord === i);
-      var hasSymbol = (r.symbolWord === i);
-
-      // Build attachment sequences for prefix and suffix
-      var prefixParts = [];
-      var suffixParts = [];
-
-      if (hasDigit && hasSymbol && r.digitSide === r.symbolSide) {
-        var side = r.digitSide;
-        var first = r.digitFirst
-          ? [{ text: String(data.digit), cls: 'syn-d' }, { text: data.symbol, cls: 'syn-s' }]
-          : [{ text: data.symbol, cls: 'syn-s' }, { text: String(data.digit), cls: 'syn-d' }];
-        if (side === 'prefix') prefixParts = first;
-        else suffixParts = first;
-      } else {
-        if (hasDigit) {
-          var digitSeg = { text: String(data.digit), cls: 'syn-d' };
-          if (r.digitSide === 'prefix') prefixParts.push(digitSeg);
-          else suffixParts.push(digitSeg);
-        }
-        if (hasSymbol) {
-          var symbolSeg = { text: data.symbol, cls: 'syn-s' };
-          if (r.symbolSide === 'prefix') prefixParts.push(symbolSeg);
-          else suffixParts.push(symbolSeg);
-        }
-      }
-
-      // Emit prefix
-      prefixParts.forEach(function (p) {
-        var span = document.createElement('span');
-        span.textContent = p.text;
-        span.className = p.cls;
-        span.setAttribute('aria-hidden', 'true');
-        el.appendChild(span);
-      });
-
-      // Emit word characters (alternate colors by word index)
-      var wordClass = (i % 2 === 0) ? 'syn-u' : 'syn-l';
-      for (var c = 0; c < word.length; c++) {
-        var span = document.createElement('span');
-        span.textContent = word[c];
-        span.className = wordClass;
-        span.setAttribute('aria-hidden', 'true');
-        el.appendChild(span);
-      }
-
-      // Emit suffix
-      suffixParts.forEach(function (p) {
-        var span = document.createElement('span');
-        span.textContent = p.text;
-        span.className = p.cls;
-        span.setAttribute('aria-hidden', 'true');
-        el.appendChild(span);
-      });
-
-      // Emit separator (except after last word)
-      if (i < data.words.length - 1) {
-        var span = document.createElement('span');
-        span.textContent = r.separator;
-        span.className = 'syn-d';
-        span.setAttribute('aria-hidden', 'true');
-        el.appendChild(span);
-      }
-    });
+    var password = renderStoryPassword(data);
+    storyState.schemaId = schema.id;
+    storyState.patternId = patternId;
+    storyState.password = password;
+    return password;
   }
 
   // ============================================
@@ -880,18 +1253,8 @@
 
   var passwords = new Array(5);
   var diyPassword = '';
-  var wordlistLoaded = false;
   var proTipShown = false;
   var sloganRotationTimer = null;
-
-  // Passphrase state — preserved across mode toggles
-  var passphraseState = {
-    words: [],
-    digit: 0,
-    symbol: '',
-    mode: 'decorated',
-    recipe: null
-  };
 
   // ============================================
   // Archetype Row Logic
@@ -915,17 +1278,7 @@
     }
 
     el.classList.remove('loading');
-    if (index === PASSPHRASE_INDEX && passphraseState.words.length > 0) {
-      if (passphraseState.mode === 'decorated') {
-        renderPassphraseDecoratedHighlighted(el, passphraseState);
-      } else {
-        renderPassphraseHighlighted(el, pw);
-      }
-    } else if (archetypes[index].isPassphrase) {
-      renderPassphraseHighlighted(el, pw);
-    } else {
-      renderHighlighted(el, pw);
-    }
+    renderHighlighted(el, pw);
   }
 
   function regenerateArchetype(index) {
@@ -938,50 +1291,17 @@
     el.classList.remove('loading');
 
     scrambleAnimate(el, pw, function () {
-      if (index === PASSPHRASE_INDEX && passphraseState.words.length > 0) {
-        if (passphraseState.mode === 'decorated') {
-          renderPassphraseDecoratedHighlighted(el, passphraseState);
-        } else {
-          renderPassphraseHighlighted(el, pw);
-        }
-      } else if (archetypes[index].isPassphrase) {
-        renderPassphraseHighlighted(el, pw);
-      } else {
-        renderHighlighted(el, pw);
-      }
+      renderHighlighted(el, pw);
     });
     hapticRegenerate();
     startFreshnessTimer(index);
     announce('Regenerated ' + archetypes[index].name + ' password');
   }
 
-  // Re-render passphrase without regenerating (called by mode toggle)
-  function rerenderPassphrase() {
-    if (passphraseState.words.length === 0) return;
-
-    var pw;
-    if (passphraseState.mode === 'plain') {
-      pw = renderPlainPassphrase(passphraseState);
-    } else {
-      pw = renderDecoratedPassphrase(passphraseState);
-    }
-    passwords[PASSPHRASE_INDEX] = pw;
-
-    var el = rows[PASSPHRASE_INDEX].querySelector('.password-value');
-    el.classList.remove('loading');
-
-    if (passphraseState.mode === 'decorated') {
-      renderPassphraseDecoratedHighlighted(el, passphraseState);
-    } else {
-      renderPassphraseHighlighted(el, pw);
-    }
-  }
-
   function regenerateAll() {
     for (var i = 0; i < 5; i++) {
       (function (idx) {
         setTimeout(function () {
-          if (archetypes[idx].isPassphrase && !wordlistLoaded) return;
           regenerateArchetype(idx);
         }, idx * 120);
       })(i);
@@ -1105,7 +1425,7 @@
   });
 
   // ============================================
-  // Mode Toggle (Easy to Remember)
+  // SFW Toggle (Strong but Memorable)
   // ============================================
 
   var modeToggle = document.querySelector('.mode-toggle');
@@ -1125,8 +1445,9 @@
       btn.classList.add('active');
       btn.setAttribute('aria-checked', 'true');
 
-      passphraseState.mode = btn.getAttribute('data-mode');
-      rerenderPassphrase();
+      storyState.sfw = btn.getAttribute('data-sfw') || 'on';
+      regenerateArchetype(PASSPHRASE_INDEX);
+      announce(storyState.sfw === 'on' ? 'SFW mode on' : 'SFW mode off');
     });
 
     modeToggle.addEventListener('keydown', function (e) {
@@ -1498,7 +1819,7 @@
     var pw = passwords[index];
 
     if (pw === null) {
-      // Passphrase not loaded yet — show loading, wordlist onload will handle it
+      // Shouldn't happen during normal flow, but keep cascade resilient.
       setTimeout(function () {
         cascadeRows(index + 1, callback);
       }, 120);
@@ -1506,11 +1827,7 @@
     }
 
     scrambleAnimate(el, pw, function () {
-      if (archetypes[index].isPassphrase) {
-        renderPassphraseHighlighted(el, pw);
-      } else {
-        renderHighlighted(el, pw);
-      }
+      renderHighlighted(el, pw);
       startFreshnessTimer(index);
     });
 
@@ -1536,7 +1853,6 @@
       rows.forEach(function (r) { r.classList.remove('boot-hidden'); });
       diySection.classList.remove('boot-hidden');
       for (var i = 0; i < archetypes.length; i++) {
-        if (i === PASSPHRASE_INDEX && !passwords[i]) continue;
         renderArchetype(i);
         startFreshnessTimer(i);
       }
@@ -1567,35 +1883,6 @@
         }, 250);
       });
     });
-  }
-
-  // ============================================
-  // Word List Lazy Loading
-  // ============================================
-
-  function loadWordList() {
-    var script = document.createElement('script');
-    script.src = 'js/wordlist.js';
-    script.onload = function () {
-      wordlistLoaded = true;
-      var pw = generateArchetype(PASSPHRASE_INDEX);
-      if (pw) {
-        var el = rows[PASSPHRASE_INDEX].querySelector('.password-value');
-        el.classList.remove('loading');
-        // If row is already revealed (boot finished), scramble-animate
-        if (rows[PASSPHRASE_INDEX].classList.contains('boot-reveal') || reducedMotion) {
-          scrambleAnimate(el, pw, function () {
-            renderPassphraseHighlighted(el, pw);
-          });
-        }
-        startFreshnessTimer(PASSPHRASE_INDEX);
-      }
-    };
-    script.onerror = function () {
-      var el = rows[PASSPHRASE_INDEX].querySelector('.password-value');
-      el.textContent = 'word list unavailable';
-    };
-    document.body.appendChild(script);
   }
 
   // ============================================
@@ -1732,16 +2019,10 @@
   // ============================================
 
   function init() {
-    // Generate all archetypes immediately, except passphrase (needs wordlist)
+    // Generate all archetypes immediately.
     for (var i = 0; i < archetypes.length; i++) {
-      if (i === PASSPHRASE_INDEX) continue;
       generateArchetype(i);
     }
-
-    // Passphrase — null until wordlist loads
-    passwords[PASSPHRASE_INDEX] = null;
-    renderArchetype(PASSPHRASE_INDEX);
-    loadWordList();
 
     // Generate DIY password (data ready before boot)
     generateDIY();

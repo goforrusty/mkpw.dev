@@ -16,8 +16,8 @@ mkpw is a single-page static web application that generates cryptographically se
 index.html          — single page, all markup
 css/style.css       — all styles, design tokens, animations
 js/app.js           — all logic (IIFE, ~1,770 lines, vanilla JS)
-js/wordlist.js      — EFF Large Wordlist (7,776 words), lazy-loaded
-fonts/              — 3 self-hosted woff2 fonts (no external CDN)
+js/wordlist.js      — Curated wordlist (4,096 words, 12.0 bits/word), lazy-loaded
+fonts/              — 4 self-hosted woff2 fonts (no external CDN)
 ```
 
 No build step. No bundler. No framework. No dependencies. The app ships as raw static files served from a Cloudflare Worker that adds security headers and cache control (see `docs/deployment-plan.md`).
@@ -42,10 +42,10 @@ Five preset generators appear as rows on the page. Each has a name, tagline (sma
 
 | # | Name | Tagline | Length | Character Pool | Pool Size | Constraints |
 |---|------|---------|--------|---------------|-----------|-------------|
-| 1 | **Strong Random** | Best for most websites | 18 | `A-Z a-z 0-9 !@#$%^&*-_` | 72 | Starts with letter; no 3+ consecutive identical chars; no sequential runs (abc, cba) |
-| 2 | **Easy to Remember** | Memorize in minutes, strong enough for real use | variable | EFF wordlist (7,776 words) | ~12.9 bits/word | Dual-mode passphrase (see below); no duplicate words |
+| 1 | **Strong & Universal** | Compatible with majority of websites | 18 | `A-Z a-z 0-9 !@#$%^&*-_` | 72 | Starts with letter; no 3+ consecutive identical chars; no sequential runs (abc, cba) |
+| 2 | **Strong but Memorable** | Passwords you'll actually remember | variable | Curated wordlist (4,096 words) | 12.0 bits/word | Dual-mode passphrase (see below); no duplicate words |
 | 3 | **No Symbols** | Letters & numbers only — for picky websites | 22 | `A-Z a-z 0-9` | 62 | No 2+ consecutive identical chars |
-| 4 | **Short** | Max strength in ≤16 characters | 12 | `A-Z a-z 0-9 !@#$%^&*-_` | 72 | Starts with letter |
+| 4 | **Short but Mighty** | Max strength in ≤16 characters | 12 | `A-Z a-z 0-9 !@#$%^&*-_` | 72 | Starts with letter |
 | 5 | **Super Strong** | Extra long — for API keys & encryption | 32 | Full printable ASCII (codes 33–126) | 94 | Requires at least one uppercase, lowercase, digit, and non-alphanumeric |
 
 ### Generation Algorithm (`generateFromPool`)
@@ -66,11 +66,11 @@ Symbol characters are organized into three strictly cumulative tiers that partit
 | 2 (More) | `+.=?~(){}[]` | 11 | 21 |
 | 3 (Full) | `"'`\\/\|:;<>,` | 11 | 32 |
 
-`SYMBOLS_SAFE` (Tier 1) is the default symbol pool used by Strong Random, Short, and the passphrase decorator. `FULL_ASCII` (codes 33–126, 94 chars) is used by Super Strong.
+`SYMBOLS_SAFE` (Tier 1) is the default symbol pool used by Strong & Universal, Short but Mighty, and the passphrase decorator. `FULL_ASCII` (codes 33–126, 94 chars) is used by Super Strong.
 
-### Easy to Remember (Passphrase) Generation
+### Strong but Memorable (Passphrase) Generation
 
-- Wordlist: EFF Large Wordlist, loaded as a `\n`-delimited string on `window.EFF_WORDLIST`, split at runtime into an array.
+- Wordlist: Curated wordlist (4,096 words, 12.0 bits/word), loaded as a `\n`-delimited string on `window.WORDLIST`, split at runtime into an array. Filtered from EFF Large, EFF Short, and BIP39 sources for 4-7 character common English words.
 - Each generation produces 4 unique random words (no duplicates within a single password, enforced via a `used` set with max-attempts guard), 1 random digit (0–9), and 1 random symbol from `SYMBOLS_SAFE`.
 - Wordlist is lazy-loaded via a dynamically injected `<script>` tag. The passphrase row shows "loading..." until the script fires `onload`.
 
@@ -91,7 +91,7 @@ Examples (same words: maple, storm, fox, belt; digit 7; symbol !): `maple7-Storm
 
 #### Mode Toggle (Segmented Control)
 
-A compact segmented control (`.mode-toggle`) in the `.row-top` of the Easy to Remember row, after `.row-header`. Two buttons — **plain** and **decorated** — in monospace font at `0.6875rem`, pill-shaped border (`border-radius: 999px`). Active segment: `background: var(--surface)`, `color: var(--accent)`. Inactive: `color: var(--muted)`.
+A compact segmented control (`.mode-toggle`) in the `.row-top` of the Strong but Memorable row, after `.row-header`. Two buttons — **plain** and **decorated** — in monospace font at `0.6875rem`, pill-shaped border (`border-radius: 999px`). Active segment: `background: var(--surface)`, `color: var(--accent)`. Inactive: `color: var(--muted)`.
 
 Uses `role="radiogroup"` with `role="radio"` on each option, `aria-checked` state, and arrow-key navigation (left/right/up/down). Toggling mode re-renders without regenerating words. The regenerate button picks entirely new words, digit, symbol, and recipe.
 
@@ -220,7 +220,7 @@ Three icon buttons grouped in a `.header-actions` pill-shaped container (`backgr
 Trust statement ("Generated in your browser. Nothing sent to any server. Ever.") preceded by a lock icon (inline SVG padlock). Separated from main content by a `border-top: 1px solid var(--surface)` with `padding: 40px 16px 48px`. Source link and license below.
 
 ### Password Rows
-Each row's `.row-top` contains a `.row-header` (flex column with a `.row-title-line` containing `.row-label` + `.shortcut-badge`, and a `.row-tagline` below), plus optional controls (e.g., the mode toggle on Easy to Remember). The `.row-title-line` is a horizontal flex container (`display: flex; align-items: center; gap: 8px`) that places the shortcut badge inline with the label text. The tagline uses `font-size: 0.75rem`, `color: var(--muted)`, `font-weight: 400`.
+Each row's `.row-top` contains a `.row-header` (flex column with a `.row-title-line` containing `.row-label` + `.shortcut-badge`, and a `.row-tagline` below), plus optional controls (e.g., the mode toggle on Strong but Memorable). The `.row-title-line` is a horizontal flex container (`display: flex; align-items: center; gap: 8px`) that places the shortcut badge inline with the label text. The tagline uses `font-size: 0.75rem`, `color: var(--muted)`, `font-weight: 400`.
 
 Password rows have a permanent `border-left: 2px solid var(--accent)` with `border-radius: 0 4px 4px 0`, `padding: 16px 0 16px 16px`, and an `8px` margin-top gap between adjacent rows (no gradient divider). On hover, a subtle golden background glow appears via `background-color: var(--accent-glow)` with a `0.3s ease` transition. No hover effect on touch devices (naturally invisible since no hover events fire). The copy glow animation (`.copy-glow`) uses a separate `box-shadow` and is independent from the hover state.
 
@@ -333,7 +333,7 @@ Pauses when page is hidden (`visibilitychange`), resumes on return.
 | `index.html` | 349 lines | All markup — header with action buttons, 5 archetype rows (with taglines and mode toggle), DIY section, footer with lock icon, info modal |
 | `css/style.css` | 1,079 lines | Design tokens (dark + light), layout, mask styles, segmented control, info modal, animations, responsive breakpoints |
 | `js/app.js` | 1,766 lines | All application logic incl. passphrase dual-mode, mask toggle, theme toggle, info modal, cumulative tier enforcement, entropy display (IIFE, vanilla ES5-compatible JS) |
-| `js/wordlist.js` | ~2 lines | EFF Large Wordlist (7,776 words as `\n`-delimited string) |
+| `js/wordlist.js` | ~2 lines | Curated wordlist (4,096 words as `\n`-delimited string, 12.0 bits/word) |
 | `fonts/*.woff2` | 3 files | IBM Plex Mono SemiBold, JetBrains Mono, Space Grotesk (Latin subset) |
 | `LICENSE` | MIT | |
 

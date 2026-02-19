@@ -53,18 +53,18 @@
     </header>
 
     <section class="archetypes" aria-label="Generated passwords">
-      <div class="password-row boot-hidden" data-index="1" role="group" aria-label="Strong Random password">
+      <div class="password-row boot-hidden" data-index="1" role="group" aria-label="Strong & Universal password">
         <div class="row-top">
           <div class="row-header">
             <div class="row-title-line">
-              <span class="row-label">STRONG RANDOM</span>
+              <span class="row-label">STRONG &amp; UNIVERSAL</span>
               <kbd class="shortcut-badge" aria-hidden="true" title="Press 1 to copy">1</kbd>
             </div>
-            <span class="row-tagline">Best for most websites</span>
+            <span class="row-tagline">Compatible with majority of websites</span>
           </div>
         </div>
         <div class="row-bottom">
-          <button class="password-text" aria-label="Copy Strong Random password" data-copy>
+          <button class="password-text" aria-label="Copy Strong & Universal password" data-copy>
             <span class="password-value"></span>
           </button>
           <div class="row-actions">
@@ -90,22 +90,22 @@
         </div>
       </div>
 
-      <div class="password-row boot-hidden" data-index="2" role="group" aria-label="Easy to Remember password">
+      <div class="password-row boot-hidden" data-index="2" role="group" aria-label="Strong but Memorable password">
         <div class="row-top">
           <div class="row-header">
             <div class="row-title-line">
-              <span class="row-label">EASY TO REMEMBER</span>
+              <span class="row-label">STRONG BUT MEMORABLE</span>
               <kbd class="shortcut-badge" aria-hidden="true" title="Press 2 to copy">2</kbd>
             </div>
-            <span class="row-tagline">Memorize in minutes, strong enough for real use</span>
+            <span class="row-tagline">Passwords you'll actually remember</span>
           </div>
-          <div class="mode-toggle" role="radiogroup" aria-label="Passphrase mode">
-            <button class="mode-option" role="radio" aria-checked="false" data-mode="plain">plain</button>
-            <button class="mode-option active" role="radio" aria-checked="true" data-mode="decorated">decorated</button>
+          <div class="mode-toggle" role="radiogroup" aria-label="SFW vocabulary toggle">
+            <button class="mode-option active" role="radio" aria-checked="true" data-sfw="on">SFW on</button>
+            <button class="mode-option" role="radio" aria-checked="false" data-sfw="off">SFW off</button>
           </div>
         </div>
         <div class="row-bottom">
-          <button class="password-text" aria-label="Copy Easy to Remember password" data-copy>
+          <button class="password-text" aria-label="Copy Strong but Memorable password" data-copy>
             <span class="password-value loading">loading...</span>
           </button>
           <div class="row-actions">
@@ -168,18 +168,18 @@
         </div>
       </div>
 
-      <div class="password-row boot-hidden" data-index="4" role="group" aria-label="Short password">
+      <div class="password-row boot-hidden" data-index="4" role="group" aria-label="Short but Mighty password">
         <div class="row-top">
           <div class="row-header">
             <div class="row-title-line">
-              <span class="row-label">SHORT</span>
+              <span class="row-label">SHORT BUT MIGHTY</span>
               <kbd class="shortcut-badge" aria-hidden="true" title="Press 4 to copy">4</kbd>
             </div>
             <span class="row-tagline">Max strength in &le;16 characters</span>
           </div>
         </div>
         <div class="row-bottom">
-          <button class="password-text" aria-label="Copy Short password" data-copy>
+          <button class="password-text" aria-label="Copy Short but Mighty password" data-copy>
             <span class="password-value"></span>
           </button>
           <div class="row-actions">
@@ -345,6 +345,7 @@
     </div>
   </div>
 
+  <script src="js/wordlist.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
