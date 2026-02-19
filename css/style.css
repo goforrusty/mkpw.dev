@@ -383,6 +383,12 @@ main {
   text-shadow: 0 0 8px var(--muted);
 }
 
+/* Light mode: stronger mask blur to compensate for light background */
+:root.light .masked .password-value span,
+:root.light .masked .password-value {
+  text-shadow: 0 0 10px rgba(42, 42, 46, 0.45);
+}
+
 /* Preserve loading state visibility when masked */
 .masked .password-value.loading {
   color: var(--muted);
