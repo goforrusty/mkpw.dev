@@ -1057,7 +1057,7 @@
     clearTimeout(faviconTimer);
     link.href = generateFavicon('\u2713',
       isLight ? '#F5F3EE' : '#1A1A2E',
-      isLight ? '#B8960A' : '#E8C547');
+      isLight ? '#9B7D0A' : '#E8C547');
     faviconTimer = setTimeout(function () {
       link.href = baseFaviconHref;
     }, 1500);
@@ -1457,44 +1457,14 @@
   // SFW Toggle (Strong but Memorable)
   // ============================================
 
-  var modeToggle = document.querySelector('.mode-toggle');
-  if (modeToggle) {
-    modeToggle.addEventListener('click', function (e) {
-      var btn = e.target;
-      while (btn && btn !== modeToggle && !btn.classList.contains('mode-option')) {
-        btn = btn.parentElement;
-      }
-      if (!btn || !btn.classList.contains('mode-option') || btn.classList.contains('active')) return;
-
-      var prev = modeToggle.querySelector('.active');
-      if (prev) {
-        prev.classList.remove('active');
-        prev.setAttribute('aria-checked', 'false');
-      }
-      btn.classList.add('active');
-      btn.setAttribute('aria-checked', 'true');
-
-      storyState.sfw = btn.getAttribute('data-sfw') || 'on';
+  var sfwToggle = document.querySelector('.sfw-toggle');
+  if (sfwToggle) {
+    sfwToggle.addEventListener('click', function () {
+      var isOn = sfwToggle.classList.toggle('active');
+      sfwToggle.setAttribute('aria-checked', String(isOn));
+      storyState.sfw = isOn ? 'on' : 'off';
       regenerateArchetype(PASSPHRASE_INDEX);
-      announce(storyState.sfw === 'on' ? 'SFW mode on' : 'SFW mode off');
-    });
-
-    modeToggle.addEventListener('keydown', function (e) {
-      var options = modeToggle.querySelectorAll('.mode-option');
-      var current = modeToggle.querySelector('.active');
-      var idx = Array.prototype.indexOf.call(options, current);
-
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        var next = options[(idx + 1) % options.length];
-        next.click();
-        next.focus();
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        var prev = options[(idx - 1 + options.length) % options.length];
-        prev.click();
-        prev.focus();
-      }
+      announce(isOn ? 'SFW mode on' : 'SFW mode off');
     });
   }
 
@@ -1851,7 +1821,7 @@
       // Shouldn't happen during normal flow, but keep cascade resilient.
       setTimeout(function () {
         cascadeRows(index + 1, callback);
-      }, 120);
+      }, 80);
       return;
     }
 
@@ -1862,7 +1832,7 @@
 
     setTimeout(function () {
       cascadeRows(index + 1, callback);
-    }, 120);
+    }, 80);
   }
 
   function fadeInSlogan(text) {
@@ -1909,7 +1879,7 @@
             fadeInSlogan(randomSlogan());
             startSloganRotation();
           });
-        }, 250);
+        }, 150);
       });
     });
   }
@@ -1971,8 +1941,8 @@
       baseFaviconHref = generateFavicon('mkpw',
         isLight ? '#F5F3EE' : '#1A1A2E',
         isLight
-          ? ['#8A7008', '#147272', '#A83A30', '#7A6307']
-          : ['#E8C547', '#7EC8C8', '#E87B6B', '#D4A843']);
+          ? ['#9B7D0A', '#1A7F7F', '#B5422E', '#8A6510']
+          : ['#E8C547', '#7EC8C8', '#E87B6B', '#C49030']);
       document.getElementById('favicon').href = baseFaviconHref;
     });
   }
@@ -2063,8 +2033,8 @@
       baseFaviconHref = generateFavicon('mkpw',
         isLight ? '#F5F3EE' : '#1A1A2E',
         isLight
-          ? ['#8A7008', '#147272', '#A83A30', '#7A6307']
-          : ['#E8C547', '#7EC8C8', '#E87B6B', '#D4A843']);
+          ? ['#9B7D0A', '#1A7F7F', '#B5422E', '#8A6510']
+          : ['#E8C547', '#7EC8C8', '#E87B6B', '#C49030']);
       var link = document.getElementById('favicon');
       if (link) link.href = baseFaviconHref;
     });

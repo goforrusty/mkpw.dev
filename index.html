@@ -36,7 +36,8 @@
         <button class="btn-icon btn-info" aria-label="Help">
           <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <circle cx="10" cy="10" r="8"/>
-            <path d="M7.5 7.5a2.5 2.5 0 0 1 4.6 1.3c0 1.7-2.6 1.7-2.6 3.2M10 15v.01"/>
+            <circle cx="10" cy="6.75" r=".75" fill="currentColor" stroke="none"/>
+            <path d="M10 9.5v4.5" stroke-linecap="round"/>
           </svg>
         </button>
         <button class="btn-icon btn-theme" aria-label="Switch to light mode">
@@ -99,10 +100,7 @@
             </div>
             <span class="row-tagline">Passwords you'll actually remember</span>
           </div>
-          <div class="mode-toggle" role="radiogroup" aria-label="SFW vocabulary toggle">
-            <button class="mode-option active" role="radio" aria-checked="true" data-sfw="on">SFW on</button>
-            <button class="mode-option" role="radio" aria-checked="false" data-sfw="off">SFW off</button>
-          </div>
+          <button class="sfw-toggle active" role="switch" aria-checked="true" aria-label="SFW vocabulary filter">SFW</button>
         </div>
         <div class="row-bottom">
           <button class="password-text" aria-label="Copy Strong but Memorable password" data-copy>
@@ -324,24 +322,34 @@
   <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="info-modal-title" hidden>
     <div class="info-backdrop"></div>
     <div class="info-card">
-      <div class="info-card-header">
-        <h2 id="info-modal-title">How mkpw works</h2>
-        <button class="btn-icon btn-info-close" aria-label="Close">
-          <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <path d="M5 5l10 10M15 5L5 15"/>
-          </svg>
-        </button>
+      <button class="btn-icon btn-info-close" aria-label="Close">
+        <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M5 5l10 10M15 5L5 15"/>
+        </svg>
+      </button>
+      <h2 class="info-hero" id="info-modal-title">
+        <span class="info-hero-prompt" aria-hidden="true">&gt;&nbsp;</span>mkpw
+      </h2>
+      <p class="info-tagline">Everything happens in your browser. Nothing leaves.</p>
+      <div class="info-promises">
+        <div class="info-item">
+          <span class="info-item-label">Client-side</span>
+          <p class="info-item-desc">Generated with cryptographic randomness. No server involved. Works offline.</p>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Zero tracking</span>
+          <p class="info-item-desc">No cookies, no localStorage, no analytics. Nothing.</p>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Nothing stored</span>
+          <p class="info-item-desc">Close the tab and it's like you were never here.</p>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Open source</span>
+          <p class="info-item-desc">MIT-licensed. Every line on GitHub.</p>
+        </div>
       </div>
-      <ul class="info-promises">
-        <li>Passwords are generated <strong>entirely in your browser</strong> using cryptographic randomness</li>
-        <li><strong>No server</strong> is involved — this page works offline</li>
-        <li>Nothing is <strong>saved, logged, or cached</strong> — close the tab and it's gone</li>
-        <li><strong>No cookies</strong>, no localStorage, no analytics — zero tracking</li>
-        <li><strong>Open source</strong> and MIT-licensed</li>
-      </ul>
-      <p class="info-footer-note">
-        <a href="https://github.com" target="_blank" rel="noopener">View source on GitHub</a>
-      </p>
+      <a class="info-source-link" href="https://github.com" target="_blank" rel="noopener">View source &rarr;</a>
     </div>
   </div>
 
