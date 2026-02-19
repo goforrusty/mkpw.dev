@@ -997,24 +997,34 @@
 
   var baseFaviconHref = '';
 
-  function generateFavicon(text, bgColor, textColor) {
+  function generateFavicon(text, bgColor, textColors) {
     var canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, 64, 64);
-    ctx.fillStyle = textColor;
     ctx.font = '600 22px "IBM Plex Mono", monospace';
-    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    if (text.length === 4) {
-      // Two-line layout: "mk" / "pw"
-      ctx.fillText(text.slice(0, 2), 32, 23);
-      ctx.fillText(text.slice(2), 32, 43);
+    if (text.length === 4 && Array.isArray(textColors)) {
+      // Two-line layout with per-letter colors: "mk" / "pw"
+      var rows = [[0, 1, 23], [2, 3, 43]];
+      for (var r = 0; r < rows.length; r++) {
+        var a = rows[r][0], b = rows[r][1], y = rows[r][2];
+        var pair = text[a] + text[b];
+        var pairW = ctx.measureText(pair).width;
+        var x0 = (64 - pairW) / 2;
+        ctx.fillStyle = textColors[a];
+        ctx.textAlign = 'left';
+        ctx.fillText(text[a], x0, y);
+        ctx.fillStyle = textColors[b];
+        ctx.fillText(text[b], x0 + ctx.measureText(text[a]).width, y);
+      }
     } else {
       // Single-character (checkmark) stays centered
+      ctx.fillStyle = Array.isArray(textColors) ? textColors[0] : textColors;
+      ctx.textAlign = 'center';
       ctx.fillText(text, 32, 34);
     }
 
@@ -1941,7 +1951,9 @@
       // Regenerate favicon with theme colors
       baseFaviconHref = generateFavicon('mkpw',
         isLight ? '#F5F3EE' : '#1A1A2E',
-        isLight ? '#B8960A' : '#E8C547');
+        isLight
+          ? ['#8A7008', '#147272', '#A83A30', '#7A6307']
+          : ['#E8C547', '#7EC8C8', '#E87B6B', '#D4A843']);
       document.getElementById('favicon').href = baseFaviconHref;
     });
   }
@@ -2029,7 +2041,11 @@
 
     // Set up favicon once fonts are loaded
     document.fonts.ready.then(function () {
-      baseFaviconHref = generateFavicon('mkpw', '#1A1A2E', '#E8C547');
+      baseFaviconHref = generateFavicon('mkpw',
+        isLight ? '#F5F3EE' : '#1A1A2E',
+        isLight
+          ? ['#8A7008', '#147272', '#A83A30', '#7A6307']
+          : ['#E8C547', '#7EC8C8', '#E87B6B', '#D4A843']);
       var link = document.getElementById('favicon');
       if (link) link.href = baseFaviconHref;
     });
