@@ -998,34 +998,53 @@
   var baseFaviconHref = '';
 
   function generateFavicon(text, bgColor, textColors) {
+    var S = 64, pad = 4, gap = 2;
     var canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
+    canvas.width = S;
+    canvas.height = S;
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, 64, 64);
-    ctx.font = '600 22px "IBM Plex Mono", monospace';
-    ctx.textBaseline = 'middle';
+    ctx.fillRect(0, 0, S, S);
 
     if (text.length === 4 && Array.isArray(textColors)) {
-      // Two-line layout with per-letter colors: "mk" / "pw"
-      var rows = [[0, 1, 23], [2, 3, 43]];
+      // Find largest font where both 2-char rows fit within padding
+      var maxW = S - 2 * pad, maxH = S - 2 * pad;
+      var fontSize = 44, asc, desc;
+      ctx.textBaseline = 'alphabetic';
+      while (fontSize > 10) {
+        ctx.font = '600 ' + fontSize + 'px "IBM Plex Mono", monospace';
+        var w1 = ctx.measureText(text.slice(0, 2)).width;
+        var w2 = ctx.measureText(text.slice(2)).width;
+        var met = ctx.measureText(text);
+        asc = met.actualBoundingBoxAscent;
+        desc = met.actualBoundingBoxDescent;
+        if (Math.max(w1, w2) <= maxW && 2 * (asc + desc) + gap <= maxH) break;
+        fontSize--;
+      }
+      // Center the two-row block vertically
+      var rowH = asc + desc;
+      var y0 = (S - (2 * rowH + gap)) / 2;
+      var baseline1 = y0 + asc;
+      var baseline2 = y0 + rowH + gap + asc;
+
+      ctx.textAlign = 'left';
+      var rows = [[0, 1, baseline1], [2, 3, baseline2]];
       for (var r = 0; r < rows.length; r++) {
         var a = rows[r][0], b = rows[r][1], y = rows[r][2];
-        var pair = text[a] + text[b];
-        var pairW = ctx.measureText(pair).width;
-        var x0 = (64 - pairW) / 2;
+        var pw = ctx.measureText(text[a] + text[b]).width;
+        var x0 = (S - pw) / 2;
         ctx.fillStyle = textColors[a];
-        ctx.textAlign = 'left';
         ctx.fillText(text[a], x0, y);
         ctx.fillStyle = textColors[b];
         ctx.fillText(text[b], x0 + ctx.measureText(text[a]).width, y);
       }
     } else {
-      // Single-character (checkmark) stays centered
+      // Single-character (checkmark) — centered and large
+      ctx.font = '600 40px "IBM Plex Mono", monospace';
       ctx.fillStyle = Array.isArray(textColors) ? textColors[0] : textColors;
       ctx.textAlign = 'center';
-      ctx.fillText(text, 32, 34);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, S / 2, S / 2);
     }
 
     return canvas.toDataURL('image/png');
