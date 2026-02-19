@@ -5,14 +5,16 @@
   // Crypto Utilities
   // ============================================
 
+  var _rngBuf = new Uint32Array(1);
+
   function randomInt(max) {
+    if (max <= 0) throw new RangeError('randomInt: max must be > 0, got ' + max);
     // Unbiased random integer in [0, max) using rejection sampling
-    var array = new Uint32Array(1);
     var limit = Math.floor(0xFFFFFFFF / max) * max;
     do {
-      crypto.getRandomValues(array);
-    } while (array[0] >= limit);
-    return array[0] % max;
+      crypto.getRandomValues(_rngBuf);
+    } while (_rngBuf[0] >= limit);
+    return _rngBuf[0] % max;
   }
 
   function shuffle(arr) {
@@ -66,29 +68,26 @@
   // Syntax Highlighting
   // ============================================
 
-  var CHAR_CLASS = {
-    upper: /[A-Z]/,
-    lower: /[a-z]/,
-    digit: /[0-9]/
-  };
-
   function charClass(ch) {
-    if (CHAR_CLASS.upper.test(ch)) return 'syn-u';
-    if (CHAR_CLASS.lower.test(ch)) return 'syn-l';
-    if (CHAR_CLASS.digit.test(ch)) return 'syn-d';
+    var c = ch.charCodeAt(0);
+    if (c >= 65 && c <= 90) return 'syn-u';   // A-Z
+    if (c >= 97 && c <= 122) return 'syn-l';  // a-z
+    if (c >= 48 && c <= 57) return 'syn-d';   // 0-9
     return 'syn-s';
   }
 
   function renderHighlighted(el, text) {
     el.textContent = '';
     el.setAttribute('aria-label', text);
+    var frag = document.createDocumentFragment();
     for (var i = 0; i < text.length; i++) {
       var span = document.createElement('span');
       span.textContent = text[i];
       span.className = charClass(text[i]);
       span.setAttribute('aria-hidden', 'true');
-      el.appendChild(span);
+      frag.appendChild(span);
     }
+    el.appendChild(frag);
   }
 
   // ============================================
@@ -321,9 +320,8 @@
         var pool = FULL_ASCII;
         var nonAlpha = '';
         for (var i = 0; i < pool.length; i++) {
-          if (!CHAR_CLASS.upper.test(pool[i]) && !CHAR_CLASS.lower.test(pool[i]) && !CHAR_CLASS.digit.test(pool[i])) {
-            nonAlpha += pool[i];
-          }
+          var cls = charClass(pool[i]);
+          if (cls === 'syn-s') nonAlpha += pool[i];
         }
         var reqs = [UPPER, LOWER, DIGITS, nonAlpha];
         return generateFromPool(32, pool, reqs);
@@ -784,10 +782,6 @@
     ).length
   };
 
-  if (typeof window !== 'undefined') {
-    window.__MKPW_STORY_LEXICON_STATS = STORY_LEXICON_STATS;
-  }
-
   var PROFANE_ADJECTIVE_WORDS = uniqueWords(words(
     'shitty damn fucking filthy crappy bitchy horny raunchy nasty'
   ));
@@ -987,6 +981,7 @@
     } catch (e) {
       ok = false;
     }
+    textarea.value = '';
     document.body.removeChild(textarea);
     return ok;
   }
@@ -996,6 +991,14 @@
   // ============================================
 
   var baseFaviconHref = '';
+  var THEME_BG = { dark: '#1A1A2E', light: '#F5F3EE' };
+  var THEME_FAVICON_COLORS = {
+    dark: ['#E8C547', '#7EC8C8', '#E87B6B', '#C49030'],
+    light: ['#9B7D0A', '#1A7F7F', '#B5422E', '#8A6510']
+  };
+
+  function themeBg() { return isLight ? THEME_BG.light : THEME_BG.dark; }
+  function themeFaviconColors() { return isLight ? THEME_FAVICON_COLORS.light : THEME_FAVICON_COLORS.dark; }
 
   function generateFavicon(text, bgColor, textColors) {
     var S = 64, pad = 4, gap = 2;
@@ -1055,9 +1058,8 @@
     var link = document.getElementById('favicon');
     if (!link) return;
     clearTimeout(faviconTimer);
-    link.href = generateFavicon('\u2713',
-      isLight ? '#F5F3EE' : '#1A1A2E',
-      isLight ? '#9B7D0A' : '#E8C547');
+    link.href = generateFavicon('\u2713', themeBg(),
+      isLight ? THEME_FAVICON_COLORS.light[0] : THEME_FAVICON_COLORS.dark[0]);
     faviconTimer = setTimeout(function () {
       link.href = baseFaviconHref;
     }, 1500);
@@ -1105,8 +1107,11 @@
   // ============================================
 
   var SCRAMBLE_CHARS = UPPER + LOWER + DIGITS + '!@#$%*&';
+  var _scrambleTimers = new WeakMap();
 
   function scrambleAnimate(el, finalText, callback) {
+    // Cancel any in-progress scramble on this element
+    if (_scrambleTimers.has(el)) clearInterval(_scrambleTimers.get(el));
     if (reducedMotion) {
       el.textContent = finalText;
       if (callback) callback();
@@ -1144,119 +1149,32 @@
 
       if (frame >= frames) {
         clearInterval(timer);
+        _scrambleTimers.delete(el);
         el.classList.remove('scrambling');
         if (callback) callback();
       }
     }, interval);
+    _scrambleTimers.set(el, timer);
   }
 
   // ============================================
-  // Slogan Animation Engines
+  // Slogan Animation
   // ============================================
 
-  var SLOGAN_ANIMS = ['scramble', 'typewriter', 'fade'];
-
-  function animateSloganScramble(el, text, onDone) {
-    var len = text.length;
-    var resolved = new Array(len).fill(false);
-    var display = new Array(len);
-    var totalFrames = 30;
-    var staggerFrames = Math.max(1, Math.floor(totalFrames / len));
-
-    for (var i = 0; i < len; i++) {
-      display[i] = text[i] === ' ' ? ' ' : SCRAMBLE_CHARS[randomInt(SCRAMBLE_CHARS.length)];
+  function animateSlogan(el, text) {
+    if (reducedMotion) {
+      el.textContent = text;
+      return;
     }
-    el.textContent = display.join('');
-
-    var frame = 0;
-    var interval = setInterval(function () {
-      frame++;
-      for (var i = 0; i < len; i++) {
-        if (resolved[i]) continue;
-        if (frame > (i * staggerFrames) + (totalFrames * 0.4)) {
-          resolved[i] = true;
-          display[i] = text[i];
-        } else {
-          display[i] = text[i] === ' ' ? ' ' : SCRAMBLE_CHARS[randomInt(SCRAMBLE_CHARS.length)];
-        }
-      }
-      el.textContent = display.join('');
-
-      if (resolved.every(Boolean)) {
-        clearInterval(interval);
-        if (onDone) onDone();
-      }
-    }, 30);
-  }
-
-  function animateSloganTypewriter(el, text, onDone) {
-    el.textContent = '\u258C'; // block cursor
-    var i = 0;
-    var interval = setInterval(function () {
-      if (i < text.length) {
-        el.textContent = text.slice(0, i + 1) + '\u258C';
-        i++;
-      } else {
-        clearInterval(interval);
-        setTimeout(function () {
-          el.textContent = text;
-          if (onDone) onDone();
-        }, 800);
-      }
-    }, 45);
-  }
-
-  function animateSloganFade(el, text, onDone) {
     el.classList.add('slogan-fade-out');
     setTimeout(function () {
       el.textContent = text;
       el.classList.remove('slogan-fade-out');
       el.classList.add('slogan-fade-in');
-      if (onDone) onDone();
       setTimeout(function () {
         el.classList.remove('slogan-fade-in');
       }, 300);
     }, 200);
-  }
-
-  function animateSlogan(el, text, style) {
-    if (reducedMotion) {
-      el.textContent = text;
-      return;
-    }
-    if (style === 'scramble') {
-      animateSloganScramble(el, text);
-    } else if (style === 'typewriter') {
-      animateSloganTypewriter(el, text);
-    } else {
-      animateSloganFade(el, text);
-    }
-  }
-
-  // ============================================
-  // Freshness Timer
-  // ============================================
-
-  var freshnessTimers = {};
-
-  function startFreshnessTimer(index) {
-    clearTimeout(freshnessTimers[index]);
-    var el;
-    if (index === 'diy') {
-      el = diyOutput.querySelector('.password-value');
-    } else {
-      el = rows[index].querySelector('.password-value');
-    }
-    el.style.filter = '';
-    el.style.transition = '';
-    freshnessTimers[index] = setTimeout(function () {
-      if (reducedMotion) {
-        el.style.filter = 'saturate(0.85)';
-      } else {
-        el.style.transition = 'filter 5s ease';
-        el.style.filter = 'saturate(0.85)';
-      }
-    }, 60000);
   }
 
   // ============================================
@@ -1323,7 +1241,6 @@
       renderHighlighted(el, pw);
     });
     hapticRegenerate();
-    startFreshnessTimer(index);
     announce('Regenerated ' + archetypes[index].name + ' password');
   }
 
@@ -1380,8 +1297,6 @@
     playTick();
     hapticCopy();
     flashFavicon();
-    if (index !== undefined) startFreshnessTimer(index);
-
     setTimeout(function () {
       btn.classList.remove('success');
       row.classList.remove('copied');
@@ -1483,7 +1398,7 @@
 
     var shiftMap = { '!': 0, '@': 1, '#': 2, '$': 3, '%': 4 };
 
-    if (e.shiftKey && shiftMap.hasOwnProperty(key)) {
+    if (e.shiftKey && hasOwn(shiftMap, key)) {
       e.preventDefault();
       regenerateArchetype(shiftMap[key]);
       return;
@@ -1569,7 +1484,6 @@
   function updateDIY() {
     generateDIY();
     renderDIY();
-    startFreshnessTimer('diy');
   }
 
   function updateSliderFill() {
@@ -1577,8 +1491,9 @@
     var max = parseFloat(diySlider.max);
     var val = parseFloat(diySlider.value);
     var pct = ((val - min) / (max - min)) * 100;
-    var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-    var surface = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
+    var styles = getComputedStyle(document.documentElement);
+    var accent = styles.getPropertyValue('--accent').trim();
+    var surface = styles.getPropertyValue('--surface').trim();
     diySlider.style.background = 'linear-gradient(to right, ' + accent + ' 0%, ' + accent + ' ' + pct + '%, ' + surface + ' ' + pct + '%, ' + surface + ' 100%)';
   }
 
@@ -1677,59 +1592,28 @@
       renderHighlighted(el, diyPassword);
     });
     hapticRegenerate();
-    startFreshnessTimer('diy');
     announce('Regenerated custom password');
   });
-
-  // ============================================
-  // Shake to Regenerate (Android-only)
-  // ============================================
-
-  function initShakeDetection() {
-    if (reducedMotion) return;
-    if (!window.DeviceMotionEvent) return;
-    if (typeof DeviceMotionEvent.requestPermission === 'function') return;
-
-    var lastAccel = { x: 0, y: 0, z: 0 };
-    var shakeDebounce = false;
-
-    window.addEventListener('devicemotion', function (e) {
-      if (shakeDebounce) return;
-      var a = e.accelerationIncludingGravity;
-      if (!a) return;
-      var delta = Math.abs(a.x - lastAccel.x) + Math.abs(a.y - lastAccel.y) + Math.abs(a.z - lastAccel.z);
-      lastAccel = { x: a.x, y: a.y, z: a.z };
-      if (delta > 15) {
-        shakeDebounce = true;
-        regenerateAll();
-        hapticRegenerate();
-        setTimeout(function () { shakeDebounce = false; }, 2000);
-      }
-    });
-  }
 
   // ============================================
   // Slogan Rotation
   // ============================================
 
   function startSloganRotation() {
+    clearInterval(sloganRotationTimer);
     sloganRotationTimer = setInterval(function () {
-      var text = randomSlogan();
-      var style = SLOGAN_ANIMS[randomInt(SLOGAN_ANIMS.length)];
-      animateSlogan(sloganEl, text, style);
+      animateSlogan(sloganEl, randomSlogan());
     }, 10000);
 
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'hidden') {
         clearInterval(sloganRotationTimer);
+        sloganRotationTimer = null;
       } else {
-        var text = randomSlogan();
-        var style = SLOGAN_ANIMS[randomInt(SLOGAN_ANIMS.length)];
-        animateSlogan(sloganEl, text, style);
+        animateSlogan(sloganEl, randomSlogan());
+        clearInterval(sloganRotationTimer);
         sloganRotationTimer = setInterval(function () {
-          var t = randomSlogan();
-          var s = SLOGAN_ANIMS[randomInt(SLOGAN_ANIMS.length)];
-          animateSlogan(sloganEl, t, s);
+          animateSlogan(sloganEl, randomSlogan());
         }, 10000);
       }
     });
@@ -1784,23 +1668,6 @@
   // Boot Sequence
   // ============================================
 
-  function showCursorBlink(el, callback) {
-    el.textContent = '>';
-    var blinks = 0;
-    var visible = true;
-    var blinkTimer = setInterval(function () {
-      visible = !visible;
-      el.style.opacity = visible ? '1' : '0';
-      blinks++;
-      if (blinks >= 4) {
-        clearInterval(blinkTimer);
-        el.textContent = '';
-        el.style.opacity = '1';
-        if (callback) callback();
-      }
-    }, 100);
-  }
-
   function cascadeRows(index, callback) {
     if (index >= rows.length) {
       // Also reveal DIY section
@@ -1828,7 +1695,6 @@
     el.classList.remove('loading');
     scrambleAnimate(el, pw, function () {
       renderHighlighted(el, pw);
-      startFreshnessTimer(index);
     });
 
     setTimeout(function () {
@@ -1854,10 +1720,8 @@
       diySection.classList.remove('boot-hidden');
       for (var i = 0; i < archetypes.length; i++) {
         renderArchetype(i);
-        startFreshnessTimer(i);
       }
       renderDIY();
-      startFreshnessTimer('diy');
       sloganEl.textContent = randomSlogan();
       startSloganRotation();
       return;
@@ -1876,7 +1740,6 @@
           cascadeRows(0, function () {
             // Step 5: Render DIY section + slogan
             renderDIY();
-            startFreshnessTimer('diy');
             fadeInSlogan(randomSlogan());
             startSloganRotation();
           });
@@ -1934,16 +1797,11 @@
         isLight ? 'Switch to dark mode' : 'Switch to light mode');
       announce(isLight ? 'Light mode' : 'Dark mode');
       // Update theme-color meta tag
-      document.querySelector('meta[name="theme-color"]').content =
-        isLight ? '#F5F3EE' : '#1A1A2E';
+      document.querySelector('meta[name="theme-color"]').content = themeBg();
       // Update slider fill for new theme colors
       updateSliderFill();
       // Regenerate favicon with theme colors
-      baseFaviconHref = generateFavicon('mkpw',
-        isLight ? '#F5F3EE' : '#1A1A2E',
-        isLight
-          ? ['#9B7D0A', '#1A7F7F', '#B5422E', '#8A6510']
-          : ['#E8C547', '#7EC8C8', '#E87B6B', '#C49030']);
+      baseFaviconHref = generateFavicon('mkpw', themeBg(), themeFaviconColors());
       document.getElementById('favicon').href = baseFaviconHref;
     });
   }
@@ -2031,11 +1889,7 @@
 
     // Set up favicon once fonts are loaded
     document.fonts.ready.then(function () {
-      baseFaviconHref = generateFavicon('mkpw',
-        isLight ? '#F5F3EE' : '#1A1A2E',
-        isLight
-          ? ['#9B7D0A', '#1A7F7F', '#B5422E', '#8A6510']
-          : ['#E8C547', '#7EC8C8', '#E87B6B', '#C49030']);
+      baseFaviconHref = generateFavicon('mkpw', themeBg(), themeFaviconColors());
       var link = document.getElementById('favicon');
       if (link) link.href = baseFaviconHref;
     });
@@ -2046,8 +1900,6 @@
     // Run boot sequence (visual only — data and handlers already attached)
     bootSequence();
 
-    // Shake detection (Android only)
-    initShakeDetection();
   }
 
   init();

@@ -402,10 +402,6 @@ main {
   filter: none;
 }
 
-.password-row:last-child {
-  border-bottom: none;
-}
-
 .row-top {
   display: flex;
   align-items: center;
@@ -605,11 +601,6 @@ main {
 :root.light .password-value .syn-l { color: rgba(138, 101, 16, 0.58); }
 :root.light .password-value .syn-d { color: rgba(26, 127, 127, 0.58); }
 :root.light .password-value .syn-s { color: rgba(181, 66, 46, 0.58); }
-
-/* --- Copy Pulse Animation --- */
-.password-text.pulse {
-  transform: scale(1.02);
-}
 
 .password-row.copied .password-text {
   transform: scale(1.02);
