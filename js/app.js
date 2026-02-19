@@ -274,7 +274,7 @@
 
   var archetypes = [
     {
-      name: 'Strong & Universal',
+      name: 'Works with Most Sites',
       generate: function () {
         var pool = UPPER + LOWER + DIGITS + SYMBOLS_SAFE;
         var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
@@ -287,13 +287,13 @@
       length: 18
     },
     {
-      name: 'Strong but Memorable',
+      name: 'If You Need to Remember It',
       generate: function () {
         return generateStoryPassword();
       }
     },
     {
-      name: 'No Symbols',
+      name: 'No Special Characters',
       generate: function () {
         var pool = UPPER + LOWER + DIGITS;
         var reqs = [UPPER, LOWER, DIGITS];
@@ -304,7 +304,7 @@
       length: 22
     },
     {
-      name: 'Short but Mighty',
+      name: 'If Character Limit Is Short',
       generate: function () {
         var pool = UPPER + LOWER + DIGITS + SYMBOLS_SAFE;
         var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
@@ -315,7 +315,7 @@
       length: 12
     },
     {
-      name: 'Super Strong',
+      name: 'Maximum Security',
       generate: function () {
         var pool = FULL_ASCII;
         var nonAlpha = '';
@@ -1369,7 +1369,7 @@
   });
 
   // ============================================
-  // SFW Toggle (Strong but Memorable)
+  // SFW Toggle (If You Need to Remember It)
   // ============================================
 
   var sfwToggle = document.querySelector('.sfw-toggle');
