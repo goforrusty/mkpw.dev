@@ -1825,6 +1825,7 @@
       return;
     }
 
+    el.classList.remove('loading');
     scrambleAnimate(el, pw, function () {
       renderHighlighted(el, pw);
       startFreshnessTimer(index);
