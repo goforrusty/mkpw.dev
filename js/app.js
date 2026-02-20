@@ -269,6 +269,9 @@
 
       if (valid) return password;
     }
+    // Best-effort fallback: probability of reaching here is ~10^-83 for all
+    // current pool sizes and constraints. Returns last attempt despite not
+    // meeting all constraints.
     return chars.join('');
   }
 
@@ -282,9 +285,7 @@
         reqs.noTripleConsecutive = true;
         reqs.noSequentialRun = true;
         return generateFromPool(18, pool, reqs);
-      },
-      poolSize: 26 + 26 + 10 + 10,
-      length: 18
+      }
     },
     {
       name: 'If You Need to Remember It',
@@ -299,9 +300,7 @@
         var reqs = [UPPER, LOWER, DIGITS];
         reqs.noDoubleConsecutive = true;
         return generateFromPool(22, pool, reqs);
-      },
-      poolSize: 26 + 26 + 10,
-      length: 22
+      }
     },
     {
       name: 'If Character Limit Is Short',
@@ -310,9 +309,7 @@
         var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
         reqs.startsWithLetter = true;
         return generateFromPool(12, pool, reqs);
-      },
-      poolSize: 26 + 26 + 10 + 10,
-      length: 12
+      }
     },
     {
       name: 'Maximum Security',
@@ -325,9 +322,7 @@
         }
         var reqs = [UPPER, LOWER, DIGITS, nonAlpha];
         return generateFromPool(32, pool, reqs);
-      },
-      poolSize: 94,
-      length: 32
+      }
     }
   ];
 
@@ -764,24 +759,6 @@
   ));
   var MIXED_ACTOR_WORDS = uniqueWords(CREATURE_ROLE_WORDS.concat(GLOBAL_NAME_WORDS, EXTRA_ACTOR_WORDS));
 
-  var STORY_LEXICON_STATS = {
-    baseWords: STORY_BASE_WORDS.length,
-    names: GLOBAL_NAME_WORDS.length,
-    creatureRoles: CREATURE_ROLE_WORDS.length,
-    mixedActors: MIXED_ACTOR_WORDS.length,
-    relations: RELATION_WORDS.length,
-    verbs: VERB_WORDS.length,
-    adjectives: ADJECTIVE_WORDS.length,
-    adjectivesVivid: ADJECTIVE_VIVID_WORDS.length,
-    objects: OBJECT_WORDS.length,
-    objectsVivid: OBJECT_VIVID_WORDS.length,
-    twists: TWIST_WORDS.length,
-    totalUnique: uniqueWords(
-      GLOBAL_NAME_WORDS
-        .concat(CREATURE_ROLE_WORDS, RELATION_WORDS, VERB_WORDS, ADJECTIVE_WORDS, OBJECT_WORDS, TWIST_WORDS)
-    ).length
-  };
-
   var PROFANE_ADJECTIVE_WORDS = uniqueWords(words(
     'shitty damn fucking filthy crappy bitchy horny raunchy nasty'
   ));
@@ -866,6 +843,7 @@
 
     for (var i = 0; i < order.length; i++) {
       var slot = order[i];
+      // Ordinal prepends before the O token (e.g., "43rd-toaster"), not replaces it
       if (data.patternId === 'ordinal' && slot === 'O') {
         parts.push(data.ordinal);
       }
@@ -1420,7 +1398,6 @@
 
   function getDIYCharsets() {
     var pool = '';
-    var poolSize = 0;
     var enabledCount = 0;
 
     togglePills.forEach(function (pill) {
@@ -1428,11 +1405,10 @@
         var key = pill.dataset.charset;
         enabledCount++;
         pool += CHARSETS[key] || '';
-        poolSize += (CHARSETS[key] || '').length;
       }
     });
 
-    return { pool: pool, poolSize: poolSize, enabledCount: enabledCount };
+    return { pool: pool, enabledCount: enabledCount };
   }
 
   function getDIYPoolSizeForEntropy() {
