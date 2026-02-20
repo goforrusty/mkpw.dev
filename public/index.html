@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:;">
+  <!-- CSP also defined as HTTP header in _headers — keep both in sync -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none';">
   <meta name="description" content="Generate secure passwords instantly. No sign-ups, no tracking. mkpw.dev">
   <meta name="theme-color" content="#1A1A2E">
   <title>mkpw — instant password generator</title>

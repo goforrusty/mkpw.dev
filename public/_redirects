@@ -1,0 +1,3 @@
+# Redirect unknown paths to root
+# Static files take precedence — this only fires for non-existent paths
+/* / 301
