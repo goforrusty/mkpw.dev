@@ -232,13 +232,13 @@
     return false;
   }
 
-  function generateFromPool(length, pool, requirements) {
+  function generateFromPool(length, pool, requiredSets, constraints) {
     for (var attempt = 0; attempt < 100; attempt++) {
       var chars = [];
 
-      if (requirements) {
-        for (var r = 0; r < requirements.length; r++) {
-          chars.push(requirements[r][randomInt(requirements[r].length)]);
+      if (requiredSets) {
+        for (var r = 0; r < requiredSets.length; r++) {
+          chars.push(requiredSets[r][randomInt(requiredSets[r].length)]);
         }
       }
 
@@ -251,19 +251,19 @@
 
       var valid = true;
 
-      if (requirements && requirements.startsWithLetter) {
+      if (constraints && constraints.startsWithLetter) {
         if (!LETTERS.includes(password[0])) { valid = false; }
       }
 
-      if (requirements && requirements.noTripleConsecutive) {
+      if (constraints && constraints.noTripleConsecutive) {
         if (hasConsecutive(password, 3)) { valid = false; }
       }
 
-      if (requirements && requirements.noDoubleConsecutive) {
+      if (constraints && constraints.noDoubleConsecutive) {
         if (hasConsecutive(password, 2)) { valid = false; }
       }
 
-      if (requirements && requirements.noSequentialRun) {
+      if (constraints && constraints.noSequentialRun) {
         if (hasSequentialRun(password)) { valid = false; }
       }
 
@@ -280,11 +280,10 @@
       name: 'Works with Most Sites',
       generate: function () {
         var pool = UPPER + LOWER + DIGITS + SYMBOLS_SAFE;
-        var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
-        reqs.startsWithLetter = true;
-        reqs.noTripleConsecutive = true;
-        reqs.noSequentialRun = true;
-        return generateFromPool(18, pool, reqs);
+        return generateFromPool(18, pool,
+          [UPPER, LOWER, DIGITS, SYMBOLS_SAFE],
+          { startsWithLetter: true, noTripleConsecutive: true, noSequentialRun: true }
+        );
       }
     },
     {
@@ -297,18 +296,20 @@
       name: 'No Special Characters',
       generate: function () {
         var pool = UPPER + LOWER + DIGITS;
-        var reqs = [UPPER, LOWER, DIGITS];
-        reqs.noDoubleConsecutive = true;
-        return generateFromPool(22, pool, reqs);
+        return generateFromPool(22, pool,
+          [UPPER, LOWER, DIGITS],
+          { noDoubleConsecutive: true }
+        );
       }
     },
     {
       name: 'If Character Limit Is Short',
       generate: function () {
         var pool = UPPER + LOWER + DIGITS + SYMBOLS_SAFE;
-        var reqs = [UPPER, LOWER, DIGITS, SYMBOLS_SAFE];
-        reqs.startsWithLetter = true;
-        return generateFromPool(12, pool, reqs);
+        return generateFromPool(12, pool,
+          [UPPER, LOWER, DIGITS, SYMBOLS_SAFE],
+          { startsWithLetter: true }
+        );
       }
     },
     {
@@ -320,8 +321,7 @@
           var cls = charClass(pool[i]);
           if (cls === 'syn-s') nonAlpha += pool[i];
         }
-        var reqs = [UPPER, LOWER, DIGITS, nonAlpha];
-        return generateFromPool(32, pool, reqs);
+        return generateFromPool(32, pool, [UPPER, LOWER, DIGITS, nonAlpha]);
       }
     }
   ];
