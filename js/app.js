@@ -1136,14 +1136,57 @@
   }
 
   // ============================================
-  // Slogan Animation
+  // Slogan Animation Engines
   // ============================================
 
-  function animateSlogan(el, text) {
-    if (reducedMotion) {
-      el.textContent = text;
-      return;
+  var SLOGAN_ANIMS = ['scramble', 'typewriter', 'fade'];
+
+  function animateSloganScramble(el, text) {
+    var len = text.length;
+    var resolved = new Array(len).fill(false);
+    var display = new Array(len);
+    var totalFrames = 30;
+    var staggerFrames = Math.max(1, Math.floor(totalFrames / len));
+    var frame = 0;
+
+    for (var i = 0; i < len; i++) {
+      display[i] = text[i] === ' ' ? ' ' : SCRAMBLE_CHARS[randomInt(SCRAMBLE_CHARS.length)];
     }
+    el.textContent = display.join('');
+
+    var interval = setInterval(function () {
+      frame++;
+      for (var i = 0; i < len; i++) {
+        if (resolved[i]) continue;
+        if (frame >= (i + 1) * staggerFrames) {
+          resolved[i] = true;
+          display[i] = text[i];
+        } else if (text[i] !== ' ') {
+          display[i] = SCRAMBLE_CHARS[randomInt(SCRAMBLE_CHARS.length)];
+        }
+      }
+      el.textContent = display.join('');
+      if (frame >= totalFrames) clearInterval(interval);
+    }, 30);
+  }
+
+  function animateSloganTypewriter(el, text) {
+    el.textContent = '\u258C';
+    var i = 0;
+    var interval = setInterval(function () {
+      if (i < text.length) {
+        el.textContent = text.slice(0, i + 1) + '\u258C';
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(function () {
+          el.textContent = text;
+        }, 800);
+      }
+    }, 45);
+  }
+
+  function animateSloganFade(el, text) {
     el.classList.add('slogan-fade-out');
     setTimeout(function () {
       el.textContent = text;
@@ -1153,6 +1196,20 @@
         el.classList.remove('slogan-fade-in');
       }, 300);
     }, 200);
+  }
+
+  function animateSlogan(el, text, style) {
+    if (reducedMotion) {
+      el.textContent = text;
+      return;
+    }
+    if (style === 'scramble') {
+      animateSloganScramble(el, text);
+    } else if (style === 'typewriter') {
+      animateSloganTypewriter(el, text);
+    } else {
+      animateSloganFade(el, text);
+    }
   }
 
   // ============================================
@@ -1578,7 +1635,7 @@
   function startSloganRotation() {
     clearInterval(sloganRotationTimer);
     sloganRotationTimer = setInterval(function () {
-      animateSlogan(sloganEl, randomSlogan());
+      animateSlogan(sloganEl, randomSlogan(), SLOGAN_ANIMS[randomInt(SLOGAN_ANIMS.length)]);
     }, 10000);
 
     document.addEventListener('visibilitychange', function () {
@@ -1586,10 +1643,10 @@
         clearInterval(sloganRotationTimer);
         sloganRotationTimer = null;
       } else {
-        animateSlogan(sloganEl, randomSlogan());
+        animateSlogan(sloganEl, randomSlogan(), SLOGAN_ANIMS[randomInt(SLOGAN_ANIMS.length)]);
         clearInterval(sloganRotationTimer);
         sloganRotationTimer = setInterval(function () {
-          animateSlogan(sloganEl, randomSlogan());
+          animateSlogan(sloganEl, randomSlogan(), SLOGAN_ANIMS[randomInt(SLOGAN_ANIMS.length)]);
         }, 10000);
       }
     });
