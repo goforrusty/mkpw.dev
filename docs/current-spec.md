@@ -20,7 +20,7 @@ js/wordlist.js      — Curated wordlist (4,096 words, 12.0 bits/word)
 fonts/              — 4 self-hosted woff2 fonts (no external CDN)
 ```
 
-No build step. No bundler. No framework. No dependencies. The app ships as raw static files served from a Cloudflare Worker that adds security headers and cache control (see `docs/deployment-plan.md`).
+No build step. No bundler. No framework. No dependencies. The app ships as raw static files served from Cloudflare Pages with security headers via `_headers` and per-asset-type cache control (see `docs/plans/2026-02-19-feat-cloudflare-pages-deployment-plan.md`).
 
 ---
 
@@ -388,12 +388,13 @@ Pauses when page is hidden (`visibilitychange`), resumes on return with an immed
 - No `eval`, no inline scripts, no dynamic code execution.
 - CSP enforced via `<meta http-equiv="Content-Security-Policy">` in the HTML: `default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:`.
 
-### Server-Side (Cloudflare Worker — planned)
+### Server-Side (Cloudflare Pages `_headers`)
 - `Content-Security-Policy`: `default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'`
-- `Strict-Transport-Security`: 2-year max-age with HSTS preload.
-- `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy` disabling all device APIs.
-- `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`.
-- Cache: fonts/CSS/JS immutable 1 year, wordlist 7 days, HTML 5 minutes with must-revalidate.
+- `Strict-Transport-Security`: 2-year max-age with HSTS preload (`.dev` TLD already in preload list).
+- `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy` disabling all device APIs, `X-DNS-Prefetch-Control: off`.
+- `Cross-Origin-Opener-Policy: same-origin`. No COEP — no cross-origin isolation needs.
+- `Cross-Origin-Resource-Policy: same-origin` on fonts (defense-in-depth).
+- Cache: fonts immutable 1 year, CSS/JS 1 day, HTML 5 minutes with must-revalidate. Cloudflare edge cache purges on deploy.
 
 ---
 
