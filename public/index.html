@@ -5,10 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- CSP also defined as HTTP header in _headers — keep both in sync -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none';">
-  <meta name="description" content="Generate secure passwords instantly. No sign-ups, no tracking. mkpw.dev">
+  <meta name="description" content="Generate secure passwords instantly — choose from 5 presets or build your own. Free, private, no sign-ups. Works offline. Powered by Web Crypto API.">
   <meta name="theme-color" content="#1A1A2E">
-  <title>mkpw — instant password generator</title>
-  <link rel="icon" type="image/png" href="data:," id="favicon">
+  <title>mkpw — Free Secure Password Generator</title>
+  <link rel="icon" type="image/png" href="/favicon.png" id="favicon">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="canonical" href="https://mkpw.dev/">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="mkpw — Free Secure Password Generator">
+  <meta property="og:description" content="Generate secure passwords instantly — choose from 5 presets or build your own. Free, private, no sign-ups. Works offline.">
+  <meta property="og:image" content="https://mkpw.dev/og-image.png">
+  <meta property="og:url" content="https://mkpw.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="mkpw">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="mkpw — Free Secure Password Generator">
+  <meta name="twitter:description" content="Generate secure passwords instantly — choose from 5 presets or build your own. Free, private, no sign-ups. Works offline.">
+  <meta name="twitter:image" content="https://mkpw.dev/og-image.png">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "mkpw",
+      "url": "https://mkpw.dev/",
+      "description": "Generate secure passwords instantly — choose from 5 presets or build your own. Free, private, no sign-ups. Works offline.",
+      "applicationCategory": "UtilityApplication",
+      "operatingSystem": "All",
+      "browserRequirements": "Requires JavaScript",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "name": "mkpw",
+      "url": "https://mkpw.dev/",
+      "description": "Free secure password generator. No tracking, no sign-ups, works offline."
+    }
+  ]
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is this password generator secure?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. mkpw uses the Web Crypto API (crypto.getRandomValues) for cryptographically secure randomness. All generation happens client-side in your browser — no passwords are ever sent to a server."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does mkpw.dev store my passwords?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. mkpw has no server, no database, no cookies, and no tracking. Generated passwords exist only in your browser's memory and are never persisted or transmitted."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work offline?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Once loaded, mkpw works entirely offline. It has zero external dependencies and makes no network requests after the initial page load."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What password types can I generate?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "mkpw offers 5 presets (Random, Passphrase, PIN, Hex, Story) plus a DIY builder where you can customize length, character sets, separators, and casing to build your own password recipe."
+      }
+    }
+  ]
+}
+  </script>
   <link rel="preload" href="fonts/IBMPlexMono-SemiBold-Latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/JetBrainsMono-Latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/JetBrainsMono-Thin-Latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -305,6 +387,46 @@
     </div>
 
     <div class="sr-announcer" aria-live="polite" aria-atomic="true"></div>
+
+    <noscript>
+      <h1>mkpw — Free Secure Password Generator</h1>
+      <p>Generate secure passwords instantly with mkpw.dev. Choose from 5 password presets or build your own with the DIY builder.</p>
+
+      <h2>Password Presets</h2>
+      <ul>
+        <li><strong>Random</strong> — Classic random passwords with mixed characters (letters, numbers, symbols)</li>
+        <li><strong>Passphrase</strong> — Memorable multi-word passphrases from a 4,096-word list</li>
+        <li><strong>PIN</strong> — Numeric-only codes for accounts that require digits</li>
+        <li><strong>Hex</strong> — Hexadecimal strings for API keys, tokens, and developer use</li>
+        <li><strong>Story</strong> — Sentence-shaped passwords that read like natural phrases</li>
+      </ul>
+
+      <h2>DIY Builder</h2>
+      <p>Customize every aspect of your password: length, character sets (uppercase, lowercase, digits, symbols), separators, and casing rules.</p>
+
+      <h2>Privacy &amp; Security</h2>
+      <ul>
+        <li>All passwords are generated client-side using the Web Crypto API</li>
+        <li>No passwords are ever sent to a server or stored anywhere</li>
+        <li>No tracking, no cookies, no analytics, no sign-ups</li>
+        <li>Works entirely offline after initial page load</li>
+        <li>Zero external dependencies — fully self-contained</li>
+      </ul>
+
+      <h2>Frequently Asked Questions</h2>
+      <dl>
+        <dt>Is this password generator secure?</dt>
+        <dd>Yes. mkpw uses the Web Crypto API (crypto.getRandomValues) for cryptographically secure randomness. All generation happens client-side in your browser — no passwords are ever sent to a server.</dd>
+        <dt>Does mkpw.dev store my passwords?</dt>
+        <dd>No. mkpw has no server, no database, no cookies, and no tracking. Generated passwords exist only in your browser's memory and are never persisted or transmitted.</dd>
+        <dt>Does it work offline?</dt>
+        <dd>Yes. Once loaded, mkpw works entirely offline. It has zero external dependencies and makes no network requests after the initial page load.</dd>
+        <dt>What password types can I generate?</dt>
+        <dd>mkpw offers 5 presets (Random, Passphrase, PIN, Hex, Story) plus a DIY builder where you can customize length, character sets, separators, and casing to build your own password recipe.</dd>
+      </dl>
+
+      <p>Enable JavaScript to use the password generator.</p>
+    </noscript>
   </main>
 
   <footer>

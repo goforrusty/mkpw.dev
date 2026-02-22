@@ -24,8 +24,31 @@
 /js/*
   Cache-Control: public, max-age=86400
 
-# HTML — always fresh
+# Image/icon assets — change rarely but not immutable (1 week)
+/favicon.ico
+  Cache-Control: public, max-age=604800
+/favicon.png
+  Cache-Control: public, max-age=604800
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+/og-image.png
+  Cache-Control: public, max-age=604800
+/icons/*
+  Cache-Control: public, max-age=604800
+
+# HTML — fresh with background revalidation
+# Canonical Link header + Early Hints preloads (enables Cloudflare 103 responses)
+# Only preloading CSS + 2 most critical fonts (IBM Plex Mono for logo, JetBrains Mono
+# for passwords). The other 2 fonts are less critical and already preloaded in HTML.
 /index.html
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=3600
+  Link: <https://mkpw.dev/>; rel="canonical"
+  Link: </css/style.css>; rel=preload; as=style
+  Link: </fonts/IBMPlexMono-SemiBold-Latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
+  Link: </fonts/JetBrainsMono-Latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
 /
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=3600
+  Link: <https://mkpw.dev/>; rel="canonical"
+  Link: </css/style.css>; rel=preload; as=style
+  Link: </fonts/IBMPlexMono-SemiBold-Latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
+  Link: </fonts/JetBrainsMono-Latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
