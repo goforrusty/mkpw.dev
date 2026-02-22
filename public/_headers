@@ -24,6 +24,11 @@
 /js/*
   Cache-Control: public, max-age=86400
 
+# Web app manifest
+/manifest.json
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=604800
+
 # Image/icon assets — change rarely but not immutable (1 week)
 /favicon.ico
   Cache-Control: public, max-age=604800
