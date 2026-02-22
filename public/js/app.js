@@ -132,11 +132,11 @@
     'No sign-up. No sign-in. No catch.',
     'One page. One purpose.',
     'your passwords are ready.',
-    'ctrl+c and leave.',
+    'Humanity\'s best defense against \'Password123\'.',
     'no account. no tracker. no small talk.',
     'touch grass after this one.',
     'we generated before you loaded.',
-    'the whole app is one page.',
+    'Leave this tab open. We don\'t mind.',
     'make password. take password. leave.',
     'client-side or it didn\'t happen.',
     'nothing was remembered.',
@@ -150,7 +150,6 @@
     'The password is yours.',
     'No account necessary.',
     'Just the passwords.',
-    'Copy. Close. Forget us.',
     'Open tab. Closed book.',
     'Strong as written.',
     'We don\'t remember you.',
@@ -159,18 +158,15 @@
     'Take what you need.',
     'Nothing to join.',
     'Your password, then gone.',
-    'A website that wants you to leave.',
+    'No signups, no newsletters, no traces.',
     'We don\'t want your email.',
     'Not a funnel. Just a tool.',
-    'Yes, this is the entire website.',
-    'This is the whole app.',
+    'Yes, this is the entire app.',
     'The world\'s least ambitious startup.',
     'We peaked on launch day.',
-    'Copy. Paste. Forget we exist.',
     'Grab one. Go.',
     'One job. Done.',
     'Open tab. Close tab. That\'s the tour.',
-    'Generate. Copy. Close tab.',
     'It\'s not that deep.',
     'Literally just passwords.',
     'No one will remember this. That\'s the point.',
@@ -178,13 +174,11 @@
     'Entropy as a service.',
     'Made fresh. Never stored.',
     'Unguessable in every sense.',
-    'Free as in beer. Free as in go away.',
     'Passwords. Not a relationship.',
     'mkdir strong-password',
     'mkdir for entropy.',
     'Warm keys, cold math.',
     'Five seeds. No strings.',
-    'Pure noise, zero signal.',
     'chmod 000 your attack surface.',
     'You needed this 5 minutes ago.',
     'No account needed to make your account.',
@@ -192,7 +186,6 @@
     'Because \'password123\' isn\'t a personality.',
     'Ctrl+V and move on with your life.',
     'Because you need a password, not a subscription.',
-    'Your password is bad and you know it.',
     'Skip the sales pitch. Here\'s your password.',
     'Faster than thinking of one yourself.',
     'Strong passwords for weak moments.'
@@ -1317,6 +1310,30 @@
     });
   }
 
+  // --- Copy toast ---
+  var copyToast = document.querySelector('.copy-toast');
+  var copyToastShowTimer = null;
+  var copyToastHideTimer = null;
+
+  function showCopyToast() {
+    clearTimeout(copyToastShowTimer);
+    clearTimeout(copyToastHideTimer);
+    copyToast.hidden = false;
+    copyToast.classList.remove('dismissing');
+    // Force reflow so transition restarts if already visible
+    void copyToast.offsetHeight;
+    copyToast.classList.add('visible');
+
+    copyToastShowTimer = setTimeout(function () {
+      copyToast.classList.add('dismissing');
+      copyToast.classList.remove('visible');
+      copyToastHideTimer = setTimeout(function () {
+        copyToast.hidden = true;
+        copyToast.classList.remove('dismissing');
+      }, 200);
+    }, 1000);
+  }
+
   function showCopySuccess(row, btn, index) {
     btn.classList.remove('fail');
     btn.classList.add('success');
@@ -1332,6 +1349,7 @@
     playTick();
     hapticCopy();
     flashFavicon();
+    showCopyToast();
     setTimeout(function () {
       btn.classList.remove('success');
       row.classList.remove('copied');

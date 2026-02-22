@@ -850,6 +850,33 @@ input[type="range"]::-moz-range-track {
   to { opacity: 0; transform: translateY(-8px); }
 }
 
+/* --- Copy Toast --- */
+.copy-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--success);
+    background: var(--surface);
+    border: 1px solid var(--accent-dim);
+    border-radius: 6px;
+    padding: 6px 14px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+.copy-toast.visible {
+    opacity: 1;
+}
+
+.copy-toast.dismissing {
+    transition-duration: 0.2s;
+}
+
 /* --- Info Modal --- */
 .info-modal {
   position: fixed;
@@ -1168,6 +1195,11 @@ footer p + p {
 
   .diy-section {
     padding: 16px;
+  }
+
+  .copy-toast {
+    bottom: 16px;
+    font-size: 0.6875rem;
   }
 }
 
