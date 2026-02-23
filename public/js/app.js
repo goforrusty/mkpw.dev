@@ -1315,21 +1315,39 @@
   var copyToastShowTimer = null;
   var copyToastHideTimer = null;
 
+  function ensureCopyToast() {
+    if (copyToast && copyToast.isConnected) return copyToast;
+    copyToast = document.querySelector('.copy-toast');
+    if (copyToast && copyToast.isConnected) return copyToast;
+    copyToast = document.createElement('div');
+    copyToast.className = 'copy-toast';
+    copyToast.textContent = 'Copied!';
+    copyToast.hidden = true;
+    copyToast.setAttribute('role', 'status');
+    copyToast.setAttribute('aria-live', 'polite');
+    copyToast.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(copyToast);
+    return copyToast;
+  }
+
   function showCopyToast() {
+    var toast = ensureCopyToast();
+    if (!toast) return;
     clearTimeout(copyToastShowTimer);
     clearTimeout(copyToastHideTimer);
-    copyToast.hidden = false;
-    copyToast.classList.remove('dismissing');
+    toast.hidden = false;
+    toast.classList.remove('dismissing');
+    toast.classList.remove('visible');
     // Force reflow so transition restarts if already visible
-    void copyToast.offsetHeight;
-    copyToast.classList.add('visible');
+    void toast.offsetHeight;
+    toast.classList.add('visible');
 
     copyToastShowTimer = setTimeout(function () {
-      copyToast.classList.add('dismissing');
-      copyToast.classList.remove('visible');
+      toast.classList.add('dismissing');
+      toast.classList.remove('visible');
       copyToastHideTimer = setTimeout(function () {
-        copyToast.hidden = true;
-        copyToast.classList.remove('dismissing');
+        toast.hidden = true;
+        toast.classList.remove('dismissing');
       }, 200);
     }, 1000);
   }

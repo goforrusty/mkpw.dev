@@ -48,12 +48,12 @@
 /index.html
   Cache-Control: public, max-age=300, stale-while-revalidate=3600
   Link: <https://mkpw.dev/>; rel="canonical"
-  Link: </css/style.css>; rel=preload; as=style
+  Link: </css/style.css?v=20260223-1>; rel=preload; as=style
   Link: </fonts/IBMPlexMono-SemiBold-Latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
   Link: </fonts/JetBrainsMono-Latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
 /
   Cache-Control: public, max-age=300, stale-while-revalidate=3600
   Link: <https://mkpw.dev/>; rel="canonical"
-  Link: </css/style.css>; rel=preload; as=style
+  Link: </css/style.css?v=20260223-1>; rel=preload; as=style
   Link: </fonts/IBMPlexMono-SemiBold-Latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
   Link: </fonts/JetBrainsMono-Latin.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
